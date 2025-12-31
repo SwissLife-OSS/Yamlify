@@ -2126,8 +2126,9 @@ public ref partial struct Utf8YamlReader
 
     private bool ParseLiteralBlockScalar()
     {
-        // Get the current indentation level before consuming the indicator
-        int currentIndent = GetCurrentIndentation();
+        // Per YAML spec 8.1.1.1, explicit indentation is relative to the node's indentation,
+        // which is the parent collection's indentation level, not the indicator line's indentation.
+        int nodeIndent = _currentDepth > 0 ? GetIndentLevel(_currentDepth - 1) : 0;
         
         _consumed++; // Skip |
         
@@ -2138,9 +2139,9 @@ public ref partial struct Utf8YamlReader
         ConsumeLineBreak();
         
         // Determine content indentation
-        // Per YAML spec, explicit indentation is added to the current indentation level
+        // Per YAML spec, explicit indentation is added to the node's indentation level
         int contentIndent = explicitIndent > 0 
-            ? currentIndent + explicitIndent 
+            ? nodeIndent + explicitIndent 
             : DetectBlockScalarIndentation();
         
         // Check for invalid indentation pattern (spaces-only lines with more indent than content)
@@ -2185,8 +2186,9 @@ public ref partial struct Utf8YamlReader
 
     private bool ParseFoldedBlockScalar()
     {
-        // Get the current indentation level before consuming the indicator
-        int currentIndent = GetCurrentIndentation();
+        // Per YAML spec 8.1.1.1, explicit indentation is relative to the node's indentation,
+        // which is the parent collection's indentation level, not the indicator line's indentation.
+        int nodeIndent = _currentDepth > 0 ? GetIndentLevel(_currentDepth - 1) : 0;
         
         _consumed++; // Skip >
         
@@ -2196,9 +2198,9 @@ public ref partial struct Utf8YamlReader
         SkipToEndOfLine();
         ConsumeLineBreak();
         
-        // Per YAML spec, explicit indentation is added to the current indentation level
+        // Per YAML spec, explicit indentation is added to the node's indentation level
         int contentIndent = explicitIndent > 0 
-            ? currentIndent + explicitIndent 
+            ? nodeIndent + explicitIndent 
             : DetectBlockScalarIndentation();
         
         // Check for invalid indentation pattern (spaces-only lines with more indent than content)
