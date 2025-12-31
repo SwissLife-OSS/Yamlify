@@ -54,4 +54,4 @@ jobs:
         shell: bash
         working-directory: ${{ matrix.project }}
         run: |
-          find . -name '*.nupkg' | grep -v '.sources.nupkg' | parallel --jobs 0 'dotnet nuget push {} --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json'
+          find . -name '*.nupkg' -not -name '*.symbols.nupkg' | parallel --jobs 0 'dotnet nuget push {} --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json'
