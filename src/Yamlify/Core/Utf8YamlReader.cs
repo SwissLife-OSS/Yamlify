@@ -7,8 +7,7 @@ namespace Yamlify.Core;
 /// </summary>
 /// <remarks>
 /// <para>
-/// This reader is a ref struct and operates directly on a <see cref="ReadOnlySpan{T}"/> of bytes,
-/// following the same patterns as <see cref="System.Text.Json.Utf8JsonReader"/>.
+/// This reader is a ref struct and operates directly on a <see cref="ReadOnlySpan{T}"/> of bytes.
 /// </para>
 /// <para>
 /// The reader implements the YAML 1.2 specification for parsing YAML streams.
@@ -50,7 +49,6 @@ public ref partial struct Utf8YamlReader
     private bool _expectingMappingValue; // True after parsing a mapping key, expecting value
     private bool _hadValueOnLine; // True if we parsed a complete key:value on the current line
     private int _lastValueLine; // Line number where _hadValueOnLine was set
-    private bool _parsingFlowMappingValue; // True when parsing value after : in flow mapping
     private bool _crossedLineBreakInFlow; // True when SkipFlowWhitespaceAndComments crossed a line break
     private bool _onDocumentStartLine; // True when content follows --- on the same line
     

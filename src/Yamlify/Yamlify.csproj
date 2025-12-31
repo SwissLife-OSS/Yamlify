@@ -5,6 +5,7 @@
     <LangVersion>preview</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     
     <!-- AOT compatibility -->
@@ -33,12 +34,13 @@
   <ItemGroup>
     <ProjectReference Include="..\Yamlify.SourceGenerator\Yamlify.SourceGenerator.csproj" 
                       PrivateAssets="all"
-                      ReferenceOutputAssembly="false" />
+                      ReferenceOutputAssembly="false"
+                      SetTargetFramework="TargetFramework=netstandard2.0" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
-    <None Include="$(MSBuildThisFileDirectory)..\Yamlify.SourceGenerator\$(OutDir)Yamlify.SourceGenerator.dll" 
+    <None Include="$(MSBuildThisFileDirectory)..\Yamlify.SourceGenerator\bin\$(Configuration)\netstandard2.0\Yamlify.SourceGenerator.dll" 
           Pack="true" 
           PackagePath="analyzers/dotnet/cs" 
           Visible="false" />

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -498,15 +499,14 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         
         // Check if this type is polymorphic (from [YamlSerializable] or [YamlPolymorphic] attributes)
         var polyInfo = GetPolymorphicInfoForType(type);
-        var isPolymorphicBase = polyInfo is not null && polyInfo.DerivedTypes.Count > 0;
-        if (isPolymorphicBase && (type.Symbol.IsAbstract || type.Symbol.TypeKind == TypeKind.Interface))
+        if (polyInfo is { DerivedTypes.Count: > 0 } && (type.Symbol.IsAbstract || type.Symbol.TypeKind == TypeKind.Interface))
         {
             // Generate polymorphic read - dispatch to correct derived type based on discriminator
             GeneratePolymorphicRead(sb, type, polyInfo, allTypes, fullTypeName);
             sb.AppendLine("        }");
             return;
         }
-        else if (isPolymorphicBase)
+        else if (polyInfo is { DerivedTypes.Count: > 0 })
         {
             // Non-abstract base type with derived types - still needs polymorphic dispatch
             // but must also handle the case where the base type itself is serialized
@@ -2678,7 +2678,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         return null;
     }
 
-    private static bool IsListOrArray(ITypeSymbol type, out ITypeSymbol? elementType, out bool isHashSet)
+    private static bool IsListOrArray(ITypeSymbol type, [NotNullWhen(true)] out ITypeSymbol? elementType, out bool isHashSet)
     {
         elementType = null;
         isHashSet = false;
@@ -2714,7 +2714,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         return false;
     }
     
-    private static bool IsDictionary(ITypeSymbol type, out ITypeSymbol? keyType, out ITypeSymbol? valueType)
+    private static bool IsDictionary(ITypeSymbol type, [NotNullWhen(true)] out ITypeSymbol? keyType, [NotNullWhen(true)] out ITypeSymbol? valueType)
     {
         keyType = null;
         valueType = null;

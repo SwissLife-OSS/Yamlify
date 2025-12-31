@@ -21,8 +21,7 @@ public enum YamlNodeType
 /// Base class for all YAML nodes in the representation model.
 /// </summary>
 /// <remarks>
-/// The representation model provides a DOM-like API for YAML documents,
-/// similar to <see cref="System.Text.Json.JsonDocument"/> but mutable.
+/// The representation model provides a mutable DOM-like API for YAML documents.
 /// </remarks>
 public abstract class YamlNode
 {

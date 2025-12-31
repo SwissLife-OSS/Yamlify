@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Yamlify.Core;
 
@@ -420,8 +419,7 @@ public static class YamlSerializer
     /// <param name="reader">The reader to read from.</param>
     /// <param name="typeInfo">The source-generated type info for the target type.</param>
     /// <returns>A <typeparamref name="TValue"/> representation of the YAML value.</returns>
-    [return: MaybeNull]
-    public static TValue Deserialize<TValue>(ref Utf8YamlReader reader, YamlTypeInfo<TValue> typeInfo)
+    public static TValue? Deserialize<TValue>(ref Utf8YamlReader reader, YamlTypeInfo<TValue> typeInfo)
     {
         ArgumentNullException.ThrowIfNull(typeInfo);
         return DeserializeCore(ref reader, typeInfo);
@@ -440,8 +438,7 @@ public static class YamlSerializer
     /// <exception cref="InvalidOperationException">
     /// Thrown when no TypeInfoResolver is configured on <see cref="YamlSerializerOptions.Default"/>.
     /// </exception>
-    [return: MaybeNull]
-    public static TValue Deserialize<TValue>(Stream stream)
+    public static TValue? Deserialize<TValue>(Stream stream)
     {
         ArgumentNullException.ThrowIfNull(stream);
         var options = YamlSerializerOptions.Default;
@@ -457,8 +454,7 @@ public static class YamlSerializer
     /// <param name="stream">The stream to read from.</param>
     /// <param name="typeInfo">The source-generated type info for the target type.</param>
     /// <returns>A <typeparamref name="TValue"/> representation of the YAML value.</returns>
-    [return: MaybeNull]
-    public static TValue Deserialize<TValue>(Stream stream, YamlTypeInfo<TValue> typeInfo)
+    public static TValue? Deserialize<TValue>(Stream stream, YamlTypeInfo<TValue> typeInfo)
     {
         ArgumentNullException.ThrowIfNull(stream);
         ArgumentNullException.ThrowIfNull(typeInfo);
@@ -478,8 +474,7 @@ public static class YamlSerializer
     /// <exception cref="InvalidOperationException">
     /// Thrown when no TypeInfoResolver is configured on the options.
     /// </exception>
-    [return: MaybeNull]
-    public static TValue Deserialize<TValue>(Stream stream, YamlSerializerOptions options)
+    public static TValue? Deserialize<TValue>(Stream stream, YamlSerializerOptions options)
     {
         ArgumentNullException.ThrowIfNull(stream);
         ArgumentNullException.ThrowIfNull(options);
@@ -498,8 +493,7 @@ public static class YamlSerializer
     /// <exception cref="InvalidOperationException">
     /// Thrown when no TypeInfoResolver is configured on <see cref="YamlSerializerOptions.Default"/>.
     /// </exception>
-    [return: MaybeNull]
-    public static async ValueTask<TValue> DeserializeAsync<TValue>(
+    public static async ValueTask<TValue?> DeserializeAsync<TValue>(
         Stream stream,
         CancellationToken cancellationToken = default)
     {
@@ -518,8 +512,7 @@ public static class YamlSerializer
     /// <param name="typeInfo">The source-generated type info for the target type.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>A <typeparamref name="TValue"/> representation of the YAML value.</returns>
-    [return: MaybeNull]
-    public static async ValueTask<TValue> DeserializeAsync<TValue>(
+    public static async ValueTask<TValue?> DeserializeAsync<TValue>(
         Stream stream, 
         YamlTypeInfo<TValue> typeInfo,
         CancellationToken cancellationToken = default)

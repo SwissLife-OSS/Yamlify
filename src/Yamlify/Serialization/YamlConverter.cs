@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Yamlify.Core;
 using Yamlify.Schema;
 
@@ -7,9 +6,6 @@ namespace Yamlify.Serialization;
 /// <summary>
 /// Base class for converting objects to and from YAML.
 /// </summary>
-/// <remarks>
-/// Follows the same patterns as <see cref="System.Text.Json.Serialization.JsonConverter{T}"/>.
-/// </remarks>
 public abstract class YamlConverter
 {
     /// <summary>

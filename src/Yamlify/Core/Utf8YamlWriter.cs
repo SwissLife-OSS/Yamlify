@@ -8,8 +8,7 @@ namespace Yamlify.Core;
 /// </summary>
 /// <remarks>
 /// <para>
-/// This writer follows patterns similar to <see cref="System.Text.Json.Utf8JsonWriter"/>,
-/// writing directly to an <see cref="IBufferWriter{T}"/> for optimal performance.
+/// This writer writes directly to an <see cref="IBufferWriter{T}"/> for optimal performance.
 /// </para>
 /// <para>
 /// The writer produces YAML 1.2 compliant output.
@@ -22,7 +21,6 @@ public sealed class Utf8YamlWriter : IDisposable
     private readonly bool _ownsOutput;
     
     private int _currentDepth;
-    private int _pendingIndent;
     private bool _needsNewLine;
     private bool _inFlowContext;
     private bool _afterPropertyName; // True if we just wrote a property name and need a value
@@ -60,7 +58,6 @@ public sealed class Utf8YamlWriter : IDisposable
         _options = options ?? YamlWriterOptions.Default;
         _ownsOutput = false;
         _currentDepth = 0;
-        _pendingIndent = 0;
         _needsNewLine = false;
         _inFlowContext = false;
         _afterPropertyName = false;
@@ -540,7 +537,6 @@ public sealed class Utf8YamlWriter : IDisposable
     public void Reset()
     {
         _currentDepth = 0;
-        _pendingIndent = 0;
         _needsNewLine = false;
         _inFlowContext = false;
         _afterPropertyName = false;
@@ -688,6 +684,7 @@ public sealed class Utf8YamlWriter : IDisposable
         if (needsQuoting)
         {
             WriteRaw((byte)'\'');
+            Span<byte> charBuffer = stackalloc byte[4];
             foreach (char c in value)
             {
                 if (c == '\'')
@@ -696,7 +693,6 @@ public sealed class Utf8YamlWriter : IDisposable
                 }
                 else
                 {
-                    Span<byte> charBuffer = stackalloc byte[4];
                     var chars = new ReadOnlySpan<char>(in c);
                     int byteCount = Encoding.UTF8.GetBytes(chars, charBuffer);
                     WriteRaw(charBuffer[..byteCount]);

@@ -259,6 +259,7 @@ public ref partial struct Utf8YamlReader
     private void SkipFlowWhitespaceAndComments()
     {
         bool hadWhitespace = false;
+        bool atStartOfLine = false; // True when we just crossed a line break
         // DON'T reset - preserve the flag if it was set from previous call
         // _crossedLineBreakInFlow = false;
         
@@ -266,15 +267,46 @@ public ref partial struct Utf8YamlReader
         {
             byte current = CurrentByte();
 
-            if (current == Space || current == Tab)
+            if (current == Tab)
             {
                 hadWhitespace = true;
+                // Tabs are only valid in flow context if they're followed by:
+                // - more whitespace/line break (empty line or tab-only indentation)
+                // - flow indicators (], }, ,, :)
+                // Tabs before CONTENT (scalars, [, {, etc.) are invalid
+                if (atStartOfLine)
+                {
+                    // Check if this tab is followed by more whitespace/line break, flow end, or content
+                    int peekPos = _consumed + 1;
+                    while (peekPos < _buffer.Length && _buffer[peekPos] == Tab)
+                    {
+                        peekPos++;
+                    }
+                    // If there's non-whitespace content after the tab(s), check if it's a flow indicator
+                    if (peekPos < _buffer.Length && !IsWhitespaceOrLineBreak(_buffer[peekPos]))
+                    {
+                        byte afterTabs = _buffer[peekPos];
+                        // Flow end indicators and comma are OK after tabs
+                        if (afterTabs != SequenceEnd && afterTabs != MappingEndChar && 
+                            afterTabs != CollectEntry && afterTabs != MappingValue)
+                        {
+                            throw new YamlException("Tabs cannot be used at the start of a line in flow context before content", Position);
+                        }
+                    }
+                }
+                _consumed++;
+            }
+            else if (current == Space)
+            {
+                hadWhitespace = true;
+                atStartOfLine = false; // Spaces clear the "at start of line" state
                 _consumed++;
             }
             else if (IsLineBreak(current))
             {
                 hadWhitespace = true;
                 _crossedLineBreakInFlow = true; // Track that we crossed a line break
+                atStartOfLine = true; // We're now at the start of a new line
                 ConsumeLineBreak();
             }
             else if (current == Comment)
@@ -287,6 +319,7 @@ public ref partial struct Utf8YamlReader
                 }
                 SkipToEndOfLine();
                 hadWhitespace = false;
+                atStartOfLine = false;
             }
             else
             {
@@ -393,14 +426,12 @@ public ref partial struct Utf8YamlReader
         // Check for tabs before content while still in the indentation zone
         // Tabs are only invalid if they appear at positions that would affect indentation
         int pos = _lineStart;
-        bool foundNonTabWhitespace = false;
         
         while (pos < _consumed && pos < _buffer.Length)
         {
             byte b = _buffer[pos];
             if (b == Space)
             {
-                foundNonTabWhitespace = true;
                 pos++;
             }
             else if (b == Tab)
@@ -515,10 +546,11 @@ public ref partial struct Utf8YamlReader
             }
             
             // Check what comes after the spaces
-            if (pos < _buffer.Length && !IsWhitespaceOrLineBreak(_buffer[pos]))
+            if (pos < _buffer.Length && !IsLineBreak(_buffer[pos]))
             {
-                // Found content - this line determines the indentation
-                // But if previous spaces-only lines had MORE spaces, that's invalid
+                // Found non-linebreak content - this line determines the indentation.
+                // Tabs after spaces are CONTENT, not indentation, so this is a content line.
+                // Check if previous spaces-only lines had MORE spaces - that's invalid.
                 if (maxSpacesOnlyIndent > 0 && spaces < maxSpacesOnlyIndent)
                 {
                     // Content at lower indentation than preceding spaces-only lines
@@ -528,17 +560,11 @@ public ref partial struct Utf8YamlReader
                 return spaces;
             }
             
-            // This is a spaces-only line (or empty line)
-            // Track the maximum spaces seen
+            // This is an empty line (spaces followed immediately by line break)
+            // Track the maximum spaces seen on empty lines
             if (spaces > maxSpacesOnlyIndent)
             {
                 maxSpacesOnlyIndent = spaces;
-            }
-            
-            // Skip to end of line
-            while (pos < _buffer.Length && !IsLineBreak(_buffer[pos]))
-            {
-                pos++;
             }
             
             // Skip the line break
@@ -599,6 +625,28 @@ public ref partial struct Utf8YamlReader
             return false;
 
         return _buffer.Slice(_consumed, expected.Length).SequenceEqual(expected);
+    }
+
+    /// <summary>
+    /// Checks if the current position matches a directive name followed by whitespace or end of line.
+    /// This ensures that %YAML is not confused with %YAMLL (a reserved directive).
+    /// </summary>
+    private bool MatchesDirective(ReadOnlySpan<byte> directiveName)
+    {
+        if (!MatchesBytes(directiveName))
+        {
+            return false;
+        }
+        
+        // After the directive name, there must be whitespace or end of buffer
+        int afterDirective = _consumed + directiveName.Length;
+        if (afterDirective >= _buffer.Length)
+        {
+            return true; // End of input after directive name is OK
+        }
+        
+        byte next = _buffer[afterDirective];
+        return IsWhitespaceOrLineBreak(next);
     }
 
     private static bool IsFlowIndicator(byte b) => 

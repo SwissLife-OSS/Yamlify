@@ -935,13 +935,15 @@ public ref partial struct Utf8YamlReader
         
         return result;
     }
+    
     private bool ParseDirective()
     {
         _consumed++; // Skip %
 
         SkipSpaces();
 
-        if (MatchesBytes(YamlDirective))
+        // Check for YAML directive - must be "YAML" followed by whitespace
+        if (MatchesDirective(YamlDirective))
         {
             // Check for duplicate YAML directive
             if (_hasYamlDirective)
@@ -973,7 +975,9 @@ public ref partial struct Utf8YamlReader
             _valueSpan = _buffer.Slice(versionStart, _consumed - versionStart);
             _tokenType = YamlTokenType.VersionDirective;
             
-            // Check for extra content after version
+            // Check for extra content after version.
+            // Per YAML spec, only comments (starting with #) are allowed after the version.
+            // H7TQ test verifies that "foo" after version is an error.
             SkipSpaces();
             if (_consumed < _buffer.Length && !IsLineBreak(CurrentByte()))
             {
@@ -991,7 +995,8 @@ public ref partial struct Utf8YamlReader
             return true;
         }
 
-        if (MatchesBytes(TagDirective))
+        // Check for TAG directive - must be "TAG" followed by whitespace
+        if (MatchesDirective(TagDirective))
         {
             _consumed += 3;
             SkipSpaces();
@@ -1283,11 +1288,13 @@ public ref partial struct Utf8YamlReader
         SkipSpaces();
         bool skippedTabs = HasTabBetween(posBeforeSkip, _consumed);
         
-        // YAML spec: Tabs cannot be used for indentation.
-        // If we skipped tabs and find another block indicator, that's invalid.
-        if (skippedTabs && _consumed < _buffer.Length && IsBlockIndicatorFollowedByWhitespace(CurrentByte()))
+        // YAML spec 8.2.3: For EXPLICIT value indicators (: at start of line after ?),
+        // the separation must be at least one space character, or a newline.
+        // Tabs are NOT valid as separation after block indicators.
+        // For IMPLICIT key:value, tabs are allowed as separation per s-separate-in-line.
+        if (isExplicitValueIndicator && skippedTabs && _consumed < _buffer.Length && !IsLineBreak(CurrentByte()))
         {
-            throw new YamlException("Tabs cannot be used for indentation before block indicators", Position);
+            throw new YamlException("Tabs cannot be used as separation after explicit value indicators, use space instead", Position);
         }
         
         // We just parsed a key, now we're looking for a value
@@ -1712,14 +1719,11 @@ public ref partial struct Utf8YamlReader
     private bool ParseFlowMappingValue()
     {
         _consumed++; // Skip :
-        SkipSpaces();
-        
-        _parsingFlowMappingValue = true; // Track that we're parsing a value in flow mapping
+        SkipFlowWhitespaceAndComments(); // Skip whitespace including line breaks in flow context
         
         // For node-level API, don't emit Value token - parse the value content directly
         if (_consumed >= _buffer.Length)
         {
-            _parsingFlowMappingValue = false;
             throw new YamlException("Unexpected end of input in flow mapping", Position);
         }
         
@@ -1732,19 +1736,6 @@ public ref partial struct Utf8YamlReader
             _valueSpan = default;
             _tokenType = YamlTokenType.Scalar;
             _scalarStyle = ScalarStyle.Plain;
-            _parsingFlowMappingValue = false;
-            return true;
-        }
-        
-        // Check for line break - value might be on next line
-        if (IsLineBreak(current))
-        {
-            // Value is on next line - return empty/null for now
-            // The next Read() will handle the actual value
-            _valueSpan = default;
-            _tokenType = YamlTokenType.Scalar;
-            _scalarStyle = ScalarStyle.Plain;
-            _parsingFlowMappingValue = false;
             return true;
         }
         
@@ -1760,7 +1751,6 @@ public ref partial struct Utf8YamlReader
             _ => ParsePlainScalar()
         };
         
-        _parsingFlowMappingValue = false;
         return result;
     }
 
@@ -2059,14 +2049,21 @@ public ref partial struct Utf8YamlReader
                     throw new YamlException("Document end marker '...' is not allowed inside a double-quoted string", Position);
                 }
                 
-                // In block context, validate that continuation lines have proper indentation
-                // YAML spec: continuation lines in multiline quoted scalars must be indented
+                // In block context, validate that continuation lines have proper indentation.
+                // YAML spec: only spaces are valid for indentation; tabs are NOT valid.
+                // A tab at the start of a continuation line is only an error if the quote started
+                // after column 0 (meaning indentation is required).
                 if (inBlockContext && _consumed < _buffer.Length)
                 {
-                    // Skip leading whitespace to find content
+                    // Check if line starts with a tab when indentation is required
+                    if (_buffer[_consumed] == Tab && quoteStartColumn > 0)
+                    {
+                        throw new YamlException("Tabs cannot be used for indentation in quoted scalar continuation lines", Position);
+                    }
+                    
+                    // Skip leading spaces to find content
                     int lineContentStart = _consumed;
-                    while (lineContentStart < _buffer.Length && 
-                           (_buffer[lineContentStart] == Space || _buffer[lineContentStart] == Tab))
+                    while (lineContentStart < _buffer.Length && _buffer[lineContentStart] == Space)
                     {
                         lineContentStart++;
                     }
@@ -2107,7 +2104,8 @@ public ref partial struct Utf8YamlReader
             (byte)'0' => true,  // \0 null
             (byte)'a' => true,  // \a bell
             (byte)'b' => true,  // \b backspace
-            (byte)'t' => true,  // \t tab
+            (byte)'t' => true,  // \t tab (letter t)
+            Tab => true,        // \<TAB> tab (literal tab per spec 5.7 production [45])
             (byte)'n' => true,  // \n newline
             (byte)'v' => true,  // \v vertical tab
             (byte)'f' => true,  // \f form feed
@@ -2132,8 +2130,9 @@ public ref partial struct Utf8YamlReader
 
     private bool ParseLiteralBlockScalar()
     {
-        // Get the current indentation level before consuming the indicator
-        int currentIndent = GetCurrentIndentation();
+        // Per YAML spec 8.1.1.1, explicit indentation is relative to the node's indentation,
+        // which is the parent collection's indentation level, not the indicator line's indentation.
+        int nodeIndent = _currentDepth > 0 ? GetIndentLevel(_currentDepth - 1) : 0;
         
         _consumed++; // Skip |
         
@@ -2144,9 +2143,9 @@ public ref partial struct Utf8YamlReader
         ConsumeLineBreak();
         
         // Determine content indentation
-        // Per YAML spec, explicit indentation is added to the current indentation level
+        // Per YAML spec, explicit indentation is added to the node's indentation level
         int contentIndent = explicitIndent > 0 
-            ? currentIndent + explicitIndent 
+            ? nodeIndent + explicitIndent 
             : DetectBlockScalarIndentation();
         
         // Check for invalid indentation pattern (spaces-only lines with more indent than content)
@@ -2191,8 +2190,9 @@ public ref partial struct Utf8YamlReader
 
     private bool ParseFoldedBlockScalar()
     {
-        // Get the current indentation level before consuming the indicator
-        int currentIndent = GetCurrentIndentation();
+        // Per YAML spec 8.1.1.1, explicit indentation is relative to the node's indentation,
+        // which is the parent collection's indentation level, not the indicator line's indentation.
+        int nodeIndent = _currentDepth > 0 ? GetIndentLevel(_currentDepth - 1) : 0;
         
         _consumed++; // Skip >
         
@@ -2202,9 +2202,9 @@ public ref partial struct Utf8YamlReader
         SkipToEndOfLine();
         ConsumeLineBreak();
         
-        // Per YAML spec, explicit indentation is added to the current indentation level
+        // Per YAML spec, explicit indentation is added to the node's indentation level
         int contentIndent = explicitIndent > 0 
-            ? currentIndent + explicitIndent 
+            ? nodeIndent + explicitIndent 
             : DetectBlockScalarIndentation();
         
         // Check for invalid indentation pattern (spaces-only lines with more indent than content)
@@ -2312,6 +2312,20 @@ public ref partial struct Utf8YamlReader
                 first == MappingStartChar || first == MappingEndChar)
             {
                 throw new YamlException($"Plain scalar cannot start with flow indicator '{(char)first}'", Position);
+            }
+            
+            // Per YAML spec production [126] ns-plain-first excludes c-indicator.
+            // Reserved indicators @ and ` cannot start a plain scalar.
+            if (first == (byte)'@' || first == (byte)'`')
+            {
+                throw new YamlException($"Plain scalar cannot start with reserved indicator '{(char)first}'", Position);
+            }
+            
+            // The directive indicator % cannot start a plain scalar.
+            // In document content, % at start of line is an error (not a directive).
+            if (first == Directive)
+            {
+                throw new YamlException("Plain scalar cannot start with directive indicator '%'", Position);
             }
         }
         
