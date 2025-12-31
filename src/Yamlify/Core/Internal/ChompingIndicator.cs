@@ -3,7 +3,7 @@ namespace Yamlify;
 /// <summary>
 /// Specifies the chomping behavior for block scalars.
 /// </summary>
-public enum ChompingIndicator : byte
+internal enum ChompingIndicator : byte
 {
     /// <summary>
     /// Clip - keep final line break, remove trailing blank lines (default).

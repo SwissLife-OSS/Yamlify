@@ -52,7 +52,7 @@ public sealed class YamlSerializerOptions
     private bool _ignoreReadOnlyProperties;
     private bool _includeFields;
     private bool _allowTrailingCommas;
-    private bool _readCommentHandling;
+    private bool _readComments;
     private bool _writeComments;
     private bool _preferFlowStyle;
     private bool _indentSequenceItems = true;
@@ -251,13 +251,13 @@ public sealed class YamlSerializerOptions
     /// <summary>
     /// Gets or sets whether comments should be read.
     /// </summary>
-    public bool ReadCommentHandling
+    public bool ReadComments
     {
-        get => _readCommentHandling;
+        get => _readComments;
         set
         {
             ThrowIfReadOnly();
-            _readCommentHandling = value;
+            _readComments = value;
         }
     }
 
@@ -465,7 +465,7 @@ public sealed class YamlSerializerOptions
         _ignoreReadOnlyProperties = options._ignoreReadOnlyProperties;
         _includeFields = options._includeFields;
         _allowTrailingCommas = options._allowTrailingCommas;
-        _readCommentHandling = options._readCommentHandling;
+        _readComments = options._readComments;
         _writeComments = options._writeComments;
         _preferFlowStyle = options._preferFlowStyle;
         _indentSequenceItems = options._indentSequenceItems;

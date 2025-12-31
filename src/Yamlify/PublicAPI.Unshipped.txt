@@ -125,10 +125,6 @@ static Yamlify.Serialization.YamlSerializer.SerializeAsync<TValue>(System.IO.Str
 static Yamlify.Serialization.YamlSerializer.SerializeToUtf8Bytes<TValue>(TValue value, Yamlify.Serialization.YamlTypeInfo<TValue>! typeInfo) -> byte[]!
 static Yamlify.Serialization.YamlSerializerOptions.CurrentResolver.get -> Yamlify.Serialization.ReferenceResolver?
 static Yamlify.Serialization.YamlSerializerOptions.Default.get -> Yamlify.Serialization.YamlSerializerOptions!
-Yamlify.ChompingIndicator
-Yamlify.ChompingIndicator.Clip = 0 -> Yamlify.ChompingIndicator
-Yamlify.ChompingIndicator.Keep = 2 -> Yamlify.ChompingIndicator
-Yamlify.ChompingIndicator.Strip = 1 -> Yamlify.ChompingIndicator
 Yamlify.CollectionStyle
 Yamlify.CollectionStyle.Any = 0 -> Yamlify.CollectionStyle
 Yamlify.CollectionStyle.Block = 1 -> Yamlify.CollectionStyle
@@ -534,8 +530,8 @@ Yamlify.Serialization.YamlSerializerOptions.PreferFlowStyle.get -> bool
 Yamlify.Serialization.YamlSerializerOptions.PreferFlowStyle.set -> void
 Yamlify.Serialization.YamlSerializerOptions.PropertyNamingPolicy.get -> Yamlify.Serialization.YamlNamingPolicy?
 Yamlify.Serialization.YamlSerializerOptions.PropertyNamingPolicy.set -> void
-Yamlify.Serialization.YamlSerializerOptions.ReadCommentHandling.get -> bool
-Yamlify.Serialization.YamlSerializerOptions.ReadCommentHandling.set -> void
+Yamlify.Serialization.YamlSerializerOptions.ReadComments.get -> bool
+Yamlify.Serialization.YamlSerializerOptions.ReadComments.set -> void
 Yamlify.Serialization.YamlSerializerOptions.ReferenceHandler.get -> Yamlify.Serialization.ReferenceHandler?
 Yamlify.Serialization.YamlSerializerOptions.ReferenceHandler.set -> void
 Yamlify.Serialization.YamlSerializerOptions.Schema.get -> Yamlify.Schema.IYamlSchema!
