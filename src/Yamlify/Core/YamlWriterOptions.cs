@@ -47,10 +47,10 @@ public sealed class YamlWriterOptions
     public ScalarStyle DefaultScalarStyle { get; init; } = ScalarStyle.Any;
 
     /// <summary>
-    /// Gets or sets a value indicating whether to skip null values in mappings.
+    /// Gets or sets a value indicating whether to ignore null values in mappings.
     /// Default is false.
     /// </summary>
-    public bool SkipNullValues { get; init; } = false;
+    public bool IgnoreNullValues { get; init; } = false;
 
     /// <summary>
     /// Gets or sets a value indicating whether to indent sequence items relative to their parent key.

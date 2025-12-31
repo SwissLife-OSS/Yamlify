@@ -230,7 +230,7 @@ public ref partial struct Utf8YamlReader
                     break;
                 }
                 
-                if (_options.CommentHandling)
+                if (_options.ReadComments)
                 {
                     return; // Let the caller handle the comment token
                 }

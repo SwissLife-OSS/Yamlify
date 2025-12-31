@@ -16,7 +16,7 @@ namespace Yamlify.Exceptions;
 /// var result = YamlSerializer.Deserialize&lt;MyType&gt;(yaml, options);
 /// </code>
 /// </example>
-public class MaximumRecursionDepthExceededException : YamlException
+public class MaxRecursionDepthExceededException : YamlException
 {
     /// <summary>
     /// Gets the maximum recursion depth that was exceeded.
@@ -29,12 +29,12 @@ public class MaximumRecursionDepthExceededException : YamlException
     public int CurrentDepth { get; }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MaximumRecursionDepthExceededException"/> class
+    /// Initializes a new instance of the <see cref="MaxRecursionDepthExceededException"/> class
     /// with the specified maximum and current depths.
     /// </summary>
     /// <param name="maxDepth">The maximum recursion depth that was exceeded.</param>
     /// <param name="currentDepth">The current recursion depth when the exception was thrown.</param>
-    public MaximumRecursionDepthExceededException(int maxDepth, int currentDepth)
+    public MaxRecursionDepthExceededException(int maxDepth, int currentDepth)
         : base(FormatMessage(maxDepth, currentDepth))
     {
         MaxDepth = maxDepth;
@@ -42,13 +42,13 @@ public class MaximumRecursionDepthExceededException : YamlException
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MaximumRecursionDepthExceededException"/> class
+    /// Initializes a new instance of the <see cref="MaxRecursionDepthExceededException"/> class
     /// with the specified maximum depth, current depth, and position information.
     /// </summary>
     /// <param name="maxDepth">The maximum recursion depth that was exceeded.</param>
     /// <param name="currentDepth">The current recursion depth when the exception was thrown.</param>
     /// <param name="position">The position in the YAML stream where the error occurred.</param>
-    public MaximumRecursionDepthExceededException(int maxDepth, int currentDepth, Core.Mark position)
+    public MaxRecursionDepthExceededException(int maxDepth, int currentDepth, Core.Mark position)
         : base(FormatMessage(maxDepth, currentDepth), position)
     {
         MaxDepth = maxDepth;
@@ -56,22 +56,22 @@ public class MaximumRecursionDepthExceededException : YamlException
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MaximumRecursionDepthExceededException"/> class
+    /// Initializes a new instance of the <see cref="MaxRecursionDepthExceededException"/> class
     /// with the specified message.
     /// </summary>
     /// <param name="message">The message that describes the error.</param>
-    public MaximumRecursionDepthExceededException(string message)
+    public MaxRecursionDepthExceededException(string message)
         : base(message)
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MaximumRecursionDepthExceededException"/> class
+    /// Initializes a new instance of the <see cref="MaxRecursionDepthExceededException"/> class
     /// with the specified message and inner exception.
     /// </summary>
     /// <param name="message">The message that describes the error.</param>
     /// <param name="innerException">The exception that is the cause of the current exception.</param>
-    public MaximumRecursionDepthExceededException(string message, Exception innerException)
+    public MaxRecursionDepthExceededException(string message, Exception innerException)
         : base(message, innerException)
     {
     }

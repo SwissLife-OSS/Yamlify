@@ -9,7 +9,7 @@ public enum DiscriminatorPosition
     /// The discriminator property is written according to its <see cref="YamlPropertyOrderAttribute"/>
     /// or declaration order, just like any other property. This is the default.
     /// </summary>
-    Ordered = 0,
+    PropertyOrder = 0,
 
     /// <summary>
     /// The discriminator property is always written first, regardless of <see cref="YamlPropertyOrderAttribute"/>.

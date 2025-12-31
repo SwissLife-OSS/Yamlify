@@ -116,7 +116,7 @@ public sealed class YamlSerializerOptions
     /// <para>
     /// This property provides protection against stack overflow or memory exhaustion when 
     /// processing deeply nested or circular YAML structures. When the depth limit is exceeded,
-    /// a <see cref="Exceptions.MaximumRecursionDepthExceededException"/> is thrown.
+    /// a <see cref="Exceptions.MaxRecursionDepthExceededException"/> is thrown.
     /// </para>
     /// <para>
     /// The default value is 64. The maximum allowed value is 1000.
@@ -429,22 +429,6 @@ public sealed class YamlSerializerOptions
         var resolver = _referenceHandler?.CreateResolver();
         _currentResolver = resolver;
         return new ReferenceResolverScope(resolver);
-    }
-
-    /// <summary>
-    /// Checks if an object has already been serialized (cycle detection).
-    /// </summary>
-    /// <param name="value">The object to check.</param>
-    /// <returns>True if the object was already serialized (is a cycle), false otherwise.</returns>
-    public static bool IsAlreadySerialized(object value)
-    {
-        if (_currentResolver is null)
-        {
-            return false;
-        }
-        
-        _currentResolver.GetReference(value, out var alreadyExists);
-        return alreadyExists;
     }
 
     /// <summary>

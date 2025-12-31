@@ -84,10 +84,10 @@ public sealed class YamlSourceGenerationOptionsAttribute : Attribute
     /// Gets or sets the position of type discriminator properties during serialization.
     /// </summary>
     /// <remarks>
-    /// When set to <see cref="DiscriminatorPosition.Ordered"/> (default), discriminator properties
+    /// When set to <see cref="DiscriminatorPosition.PropertyOrder"/> (default), discriminator properties
     /// are written according to their <see cref="YamlPropertyOrderAttribute"/> or declaration order.
     /// When set to <see cref="DiscriminatorPosition.First"/>, discriminator properties are always
     /// written first, regardless of their order attribute.
     /// </remarks>
-    public DiscriminatorPosition DiscriminatorPosition { get; set; } = DiscriminatorPosition.Ordered;
+    public DiscriminatorPosition DiscriminatorPosition { get; set; } = DiscriminatorPosition.PropertyOrder;
 }

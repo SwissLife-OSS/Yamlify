@@ -20,7 +20,7 @@ public readonly struct YamlReaderOptions
     /// Gets a value indicating whether comments should be reported as tokens.
     /// Default is false (comments are skipped).
     /// </summary>
-    public bool CommentHandling { get; init; }
+    public bool ReadComments { get; init; }
 
     /// <summary>
     /// Gets a value indicating whether to allow trailing commas in flow collections.
@@ -40,7 +40,7 @@ public readonly struct YamlReaderOptions
     public YamlReaderOptions()
     {
         MaxDepth = 64;
-        CommentHandling = false;
+        ReadComments = false;
         AllowTrailingCommas = true;
         StrictDuplicateKeys = false;
     }

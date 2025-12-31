@@ -13,7 +13,7 @@ public abstract class YamlPropertyInfo
     /// <summary>
     /// Gets the name of the property as it appears in YAML.
     /// </summary>
-    public abstract string YamlPropertyName { get; }
+    public abstract string SerializedName { get; }
 
     /// <summary>
     /// Gets the type of the property.
@@ -36,12 +36,12 @@ public abstract class YamlPropertyInfo
     public abstract YamlIgnoreCondition? IgnoreCondition { get; }
 
     /// <summary>
-    /// Gets the getter function.
+    /// Gets the getter function for non-generic access.
     /// </summary>
-    public abstract Func<object, object?>? Get { get; }
+    public abstract Func<object, object?>? Getter { get; }
 
     /// <summary>
-    /// Gets the setter action.
+    /// Gets the setter action for non-generic access.
     /// </summary>
-    public abstract Action<object, object?>? Set { get; }
+    public abstract Action<object, object?>? Setter { get; }
 }

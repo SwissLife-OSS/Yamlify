@@ -26,4 +26,15 @@ public abstract class ReferenceResolver
     /// <param name="referenceId">The reference identifier.</param>
     /// <returns>The referenced object.</returns>
     public abstract object ResolveReference(string referenceId);
+
+    /// <summary>
+    /// Checks if an object has already been serialized (cycle detection).
+    /// </summary>
+    /// <param name="value">The object to check.</param>
+    /// <returns>True if the object was already serialized (is a cycle), false otherwise.</returns>
+    public bool IsCycleReference(object value)
+    {
+        GetReference(value, out var alreadyExists);
+        return alreadyExists;
+    }
 }

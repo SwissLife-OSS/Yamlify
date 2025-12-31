@@ -11,7 +11,7 @@ public sealed class YamlPropertyInfo<TDeclaringType, TProperty> : YamlPropertyIn
     public override string Name { get; }
 
     /// <inheritdoc/>
-    public override string YamlPropertyName { get; }
+    public override string SerializedName { get; }
 
     /// <inheritdoc/>
     public override Type PropertyType => typeof(TProperty);
@@ -26,27 +26,27 @@ public sealed class YamlPropertyInfo<TDeclaringType, TProperty> : YamlPropertyIn
     public override YamlIgnoreCondition? IgnoreCondition { get; }
 
     /// <inheritdoc/>
-    public override Func<object, object?>? Get { get; }
+    public override Func<object, object?>? Getter { get; }
 
     /// <inheritdoc/>
-    public override Action<object, object?>? Set { get; }
+    public override Action<object, object?>? Setter { get; }
 
     /// <summary>
     /// Gets the strongly-typed getter function.
     /// </summary>
-    public Func<TDeclaringType, TProperty>? Getter { get; }
+    public Func<TDeclaringType, TProperty>? TypedGetter { get; }
 
     /// <summary>
     /// Gets the strongly-typed setter action.
     /// </summary>
-    public Action<TDeclaringType, TProperty>? Setter { get; }
+    public Action<TDeclaringType, TProperty>? TypedSetter { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="YamlPropertyInfo{TDeclaringType, TProperty}"/> class.
     /// </summary>
     public YamlPropertyInfo(
         string name,
-        string yamlPropertyName,
+        string serializedName,
         Func<TDeclaringType, TProperty>? getter,
         Action<TDeclaringType, TProperty>? setter,
         bool isRequired = false,
@@ -54,9 +54,9 @@ public sealed class YamlPropertyInfo<TDeclaringType, TProperty> : YamlPropertyIn
         YamlIgnoreCondition? ignoreCondition = null)
     {
         Name = name;
-        YamlPropertyName = yamlPropertyName;
-        Getter = getter;
-        Setter = setter;
+        SerializedName = serializedName;
+        TypedGetter = getter;
+        TypedSetter = setter;
         IsRequired = isRequired;
         Order = order;
         IgnoreCondition = ignoreCondition;
@@ -64,12 +64,12 @@ public sealed class YamlPropertyInfo<TDeclaringType, TProperty> : YamlPropertyIn
         // Create boxed versions for non-generic access
         if (getter != null)
         {
-            Get = obj => getter((TDeclaringType)obj);
+            Getter = obj => getter((TDeclaringType)obj);
         }
         
         if (setter != null)
         {
-            Set = (obj, value) => setter((TDeclaringType)obj, (TProperty)value!);
+            Setter = (obj, value) => setter((TDeclaringType)obj, (TProperty)value!);
         }
     }
 }

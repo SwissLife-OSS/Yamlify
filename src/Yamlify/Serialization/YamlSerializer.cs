@@ -603,7 +603,7 @@ public static class YamlSerializer
             IndentSize = options.IndentSize,
             PreferFlowStyle = options.PreferFlowStyle,
             DefaultScalarStyle = options.DefaultScalarStyle,
-            SkipNullValues = options.IgnoreNullValues,
+            IgnoreNullValues = options.IgnoreNullValues,
             IndentSequenceItems = options.IndentSequenceItems
         };
     }
