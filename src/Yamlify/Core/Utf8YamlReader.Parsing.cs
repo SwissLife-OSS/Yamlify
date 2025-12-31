@@ -1714,12 +1714,9 @@ public ref partial struct Utf8YamlReader
         _consumed++; // Skip :
         SkipSpaces();
         
-        _parsingFlowMappingValue = true; // Track that we're parsing a value in flow mapping
-        
         // For node-level API, don't emit Value token - parse the value content directly
         if (_consumed >= _buffer.Length)
         {
-            _parsingFlowMappingValue = false;
             throw new YamlException("Unexpected end of input in flow mapping", Position);
         }
         
@@ -1732,7 +1729,6 @@ public ref partial struct Utf8YamlReader
             _valueSpan = default;
             _tokenType = YamlTokenType.Scalar;
             _scalarStyle = ScalarStyle.Plain;
-            _parsingFlowMappingValue = false;
             return true;
         }
         
@@ -1744,7 +1740,6 @@ public ref partial struct Utf8YamlReader
             _valueSpan = default;
             _tokenType = YamlTokenType.Scalar;
             _scalarStyle = ScalarStyle.Plain;
-            _parsingFlowMappingValue = false;
             return true;
         }
         
@@ -1760,7 +1755,6 @@ public ref partial struct Utf8YamlReader
             _ => ParsePlainScalar()
         };
         
-        _parsingFlowMappingValue = false;
         return result;
     }
 

@@ -6,6 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    
+    <!-- Suppress warnings from generated code and unused test parameters -->
+    <NoWarn>$(NoWarn);CS8600;CS8601;CS8604;CS0219;xUnit1026</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

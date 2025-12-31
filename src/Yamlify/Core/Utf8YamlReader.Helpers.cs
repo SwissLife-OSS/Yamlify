@@ -393,14 +393,12 @@ public ref partial struct Utf8YamlReader
         // Check for tabs before content while still in the indentation zone
         // Tabs are only invalid if they appear at positions that would affect indentation
         int pos = _lineStart;
-        bool foundNonTabWhitespace = false;
         
         while (pos < _consumed && pos < _buffer.Length)
         {
             byte b = _buffer[pos];
             if (b == Space)
             {
-                foundNonTabWhitespace = true;
                 pos++;
             }
             else if (b == Tab)

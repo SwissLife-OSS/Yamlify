@@ -204,8 +204,11 @@ internal struct SimpleKeyInfo
 internal ref struct TokenBuffer
 {
     // Inline storage for common cases (8 tokens = ~320 bytes)
+    // These fields are accessed via Unsafe.Add from _token0
+#pragma warning disable CS0169
     private RawToken _token0, _token1, _token2, _token3;
     private RawToken _token4, _token5, _token6, _token7;
+#pragma warning restore CS0169
 
     // Overflow storage for rare complex cases
     private RawToken[]? _overflow;
@@ -388,8 +391,11 @@ internal ref struct TokenBuffer
 internal ref struct SimpleKeyStack
 {
     // Inline storage (8 levels covers most real-world cases)
+    // These fields are accessed via Unsafe.Add from _key0
+#pragma warning disable CS0169
     private SimpleKeyInfo _key0, _key1, _key2, _key3;
     private SimpleKeyInfo _key4, _key5, _key6, _key7;
+#pragma warning restore CS0169
 
     // Overflow for deeply nested flows
     private SimpleKeyInfo[]? _overflow;
@@ -499,10 +505,13 @@ internal struct TagHandleStorage
     private const int MaxHandles = 4;
 
     // Inline storage for handles (fixed-size arrays)
+    // These fields are accessed via Unsafe.Add from _handle0
+#pragma warning disable CS0169, CS0649
     private TagHandleEntry _handle0;
     private TagHandleEntry _handle1;
     private TagHandleEntry _handle2;
     private TagHandleEntry _handle3;
+#pragma warning restore CS0169, CS0649
 
     private int _count;
 
