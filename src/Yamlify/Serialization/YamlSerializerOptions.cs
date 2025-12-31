@@ -34,8 +34,7 @@ internal static class YamlSerializerDefaults
     /// Default maximum recursion depth for serialization and deserialization.
     /// </summary>
     /// <remarks>
-    /// This value (64) matches System.Text.Json's default for maximum depth.
-    /// It provides protection against stack overflow from deeply nested or circular structures.
+    /// This value (64) provides protection against stack overflow from deeply nested or circular structures.
     /// </remarks>
     internal const int DefaultMaxDepth = 64;
 
@@ -48,9 +47,6 @@ internal static class YamlSerializerDefaults
 /// <summary>
 /// Provides options to be used with <see cref="YamlSerializer"/>.
 /// </summary>
-/// <remarks>
-/// Follows the same patterns as <see cref="System.Text.Json.JsonSerializerOptions"/>.
-/// </remarks>
 public sealed class YamlSerializerOptions
 {
     private static YamlSerializerOptions? _default;
@@ -165,8 +161,7 @@ public sealed class YamlSerializerOptions
     /// a <see cref="Exceptions.MaximumRecursionDepthExceededException"/> is thrown.
     /// </para>
     /// <para>
-    /// The default value is 64, which matches System.Text.Json's default.
-    /// The maximum allowed value is 1000.
+    /// The default value is 64. The maximum allowed value is 1000.
     /// </para>
     /// </remarks>
     /// <example>

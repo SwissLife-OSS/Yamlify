@@ -8,8 +8,7 @@ namespace Yamlify.Core;
 /// </summary>
 /// <remarks>
 /// <para>
-/// This writer follows patterns similar to <see cref="System.Text.Json.Utf8JsonWriter"/>,
-/// writing directly to an <see cref="IBufferWriter{T}"/> for optimal performance.
+/// This writer writes directly to an <see cref="IBufferWriter{T}"/> for optimal performance.
 /// </para>
 /// <para>
 /// The writer produces YAML 1.2 compliant output.

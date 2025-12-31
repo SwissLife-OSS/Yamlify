@@ -7,8 +7,7 @@ namespace Yamlify.Core;
 /// </summary>
 /// <remarks>
 /// <para>
-/// This reader is a ref struct and operates directly on a <see cref="ReadOnlySpan{T}"/> of bytes,
-/// following the same patterns as <see cref="System.Text.Json.Utf8JsonReader"/>.
+/// This reader is a ref struct and operates directly on a <see cref="ReadOnlySpan{T}"/> of bytes.
 /// </para>
 /// <para>
 /// The reader implements the YAML 1.2 specification for parsing YAML streams.
