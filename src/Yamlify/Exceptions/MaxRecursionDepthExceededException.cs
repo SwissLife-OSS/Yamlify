@@ -1,4 +1,4 @@
-namespace Yamlify.Exceptions;
+namespace Yamlify;
 
 /// <summary>
 /// The exception that is thrown when the maximum recursion depth is exceeded during
@@ -48,7 +48,7 @@ public class MaxRecursionDepthExceededException : YamlException
     /// <param name="maxDepth">The maximum recursion depth that was exceeded.</param>
     /// <param name="currentDepth">The current recursion depth when the exception was thrown.</param>
     /// <param name="position">The position in the YAML stream where the error occurred.</param>
-    public MaxRecursionDepthExceededException(int maxDepth, int currentDepth, Core.Mark position)
+    public MaxRecursionDepthExceededException(int maxDepth, int currentDepth, Mark position)
         : base(FormatMessage(maxDepth, currentDepth), position)
     {
         MaxDepth = maxDepth;

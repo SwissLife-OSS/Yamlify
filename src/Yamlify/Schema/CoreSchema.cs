@@ -26,7 +26,7 @@ public sealed partial class FailsafeSchema : IYamlSchema
     }
 
     /// <inheritdoc/>
-    public string ResolveNonPlainScalarTag(ReadOnlySpan<char> value, Core.ScalarStyle style)
+    public string ResolveNonPlainScalarTag(ReadOnlySpan<char> value, ScalarStyle style)
     {
         return YamlTags.Str;
     }
@@ -85,7 +85,7 @@ public sealed partial class JsonSchema : IYamlSchema
     }
 
     /// <inheritdoc/>
-    public string ResolveNonPlainScalarTag(ReadOnlySpan<char> value, Core.ScalarStyle style)
+    public string ResolveNonPlainScalarTag(ReadOnlySpan<char> value, ScalarStyle style)
     {
         return YamlTags.Str;
     }
@@ -220,7 +220,7 @@ public sealed partial class CoreSchema : IYamlSchema
     }
 
     /// <inheritdoc/>
-    public string ResolveNonPlainScalarTag(ReadOnlySpan<char> value, Core.ScalarStyle style)
+    public string ResolveNonPlainScalarTag(ReadOnlySpan<char> value, ScalarStyle style)
     {
         // Non-plain scalars are always strings in Core Schema
         return YamlTags.Str;

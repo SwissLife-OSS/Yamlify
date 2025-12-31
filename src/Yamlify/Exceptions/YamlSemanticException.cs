@@ -1,4 +1,4 @@
-namespace Yamlify.Exceptions;
+namespace Yamlify;
 
 /// <summary>
 /// The exception that is thrown when a YAML semantic error is encountered (e.g., unresolved alias).
@@ -18,7 +18,7 @@ public class YamlSemanticException : YamlException
     /// </summary>
     /// <param name="message">The message that describes the error.</param>
     /// <param name="position">The position in the YAML stream where the error occurred.</param>
-    public YamlSemanticException(string message, Core.Mark position) 
+    public YamlSemanticException(string message, Mark position) 
         : base(message, position)
     {
     }

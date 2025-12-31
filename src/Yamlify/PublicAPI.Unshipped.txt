@@ -1,15 +1,15 @@
 #nullable enable
-abstract Yamlify.RepresentationModel.YamlNode.Accept(Yamlify.RepresentationModel.IYamlVisitor! visitor) -> void
-abstract Yamlify.RepresentationModel.YamlNode.DeepClone() -> Yamlify.RepresentationModel.YamlNode!
-abstract Yamlify.RepresentationModel.YamlNode.NodeType.get -> Yamlify.RepresentationModel.YamlNodeType
+abstract Yamlify.Nodes.YamlNode.Accept(Yamlify.Nodes.IYamlVisitor! visitor) -> void
+abstract Yamlify.Nodes.YamlNode.DeepClone() -> Yamlify.Nodes.YamlNode!
+abstract Yamlify.Nodes.YamlNode.NodeType.get -> Yamlify.Nodes.YamlNodeType
 abstract Yamlify.Serialization.ReferenceHandler.CreateResolver() -> Yamlify.Serialization.ReferenceResolver!
 abstract Yamlify.Serialization.ReferenceResolver.AddReference(string! referenceId, object! value) -> void
 abstract Yamlify.Serialization.ReferenceResolver.GetReference(object! value, out bool alreadyExists) -> string!
 abstract Yamlify.Serialization.ReferenceResolver.ResolveReference(string! referenceId) -> object!
 abstract Yamlify.Serialization.YamlConverter.CanConvert(System.Type! typeToConvert) -> bool
 abstract Yamlify.Serialization.YamlConverter.Type.get -> System.Type!
-abstract Yamlify.Serialization.YamlConverter<T>.Read(ref Yamlify.Core.Utf8YamlReader reader, Yamlify.Serialization.YamlSerializerOptions! options) -> T?
-abstract Yamlify.Serialization.YamlConverter<T>.Write(Yamlify.Core.Utf8YamlWriter! writer, T value, Yamlify.Serialization.YamlSerializerOptions! options) -> void
+abstract Yamlify.Serialization.YamlConverter<T>.Read(ref Yamlify.Utf8YamlReader reader, Yamlify.Serialization.YamlSerializerOptions! options) -> T?
+abstract Yamlify.Serialization.YamlConverter<T>.Write(Yamlify.Utf8YamlWriter! writer, T value, Yamlify.Serialization.YamlSerializerOptions! options) -> void
 abstract Yamlify.Serialization.YamlConverterFactory.CreateConverter(System.Type! typeToConvert, Yamlify.Serialization.YamlSerializerOptions! options) -> Yamlify.Serialization.YamlConverter?
 abstract Yamlify.Serialization.YamlNamingPolicy.ConvertName(string! name) -> string!
 abstract Yamlify.Serialization.YamlPropertyInfo.Getter.get -> System.Func<object!, object?>?
@@ -37,27 +37,27 @@ const Yamlify.Schema.YamlTags.Str = "tag:yaml.org,2002:str" -> string!
 const Yamlify.Schema.YamlTags.Timestamp = "tag:yaml.org,2002:timestamp" -> string!
 override sealed Yamlify.Serialization.YamlConverter<T>.Type.get -> System.Type!
 override sealed Yamlify.Serialization.YamlConverterFactory.Type.get -> System.Type!
-override Yamlify.Core.Mark.Equals(object? obj) -> bool
-override Yamlify.Core.Mark.GetHashCode() -> int
-override Yamlify.Core.Mark.ToString() -> string!
-override Yamlify.RepresentationModel.YamlAliasNode.Accept(Yamlify.RepresentationModel.IYamlVisitor! visitor) -> void
-override Yamlify.RepresentationModel.YamlAliasNode.DeepClone() -> Yamlify.RepresentationModel.YamlNode!
-override Yamlify.RepresentationModel.YamlAliasNode.NodeType.get -> Yamlify.RepresentationModel.YamlNodeType
-override Yamlify.RepresentationModel.YamlAliasNode.ToString() -> string!
-override Yamlify.RepresentationModel.YamlMappingNode.Accept(Yamlify.RepresentationModel.IYamlVisitor! visitor) -> void
-override Yamlify.RepresentationModel.YamlMappingNode.DeepClone() -> Yamlify.RepresentationModel.YamlNode!
-override Yamlify.RepresentationModel.YamlMappingNode.NodeType.get -> Yamlify.RepresentationModel.YamlNodeType
-override Yamlify.RepresentationModel.YamlMappingNode.ToString() -> string!
-override Yamlify.RepresentationModel.YamlScalarNode.Accept(Yamlify.RepresentationModel.IYamlVisitor! visitor) -> void
-override Yamlify.RepresentationModel.YamlScalarNode.DeepClone() -> Yamlify.RepresentationModel.YamlNode!
-override Yamlify.RepresentationModel.YamlScalarNode.Equals(object? obj) -> bool
-override Yamlify.RepresentationModel.YamlScalarNode.GetHashCode() -> int
-override Yamlify.RepresentationModel.YamlScalarNode.NodeType.get -> Yamlify.RepresentationModel.YamlNodeType
-override Yamlify.RepresentationModel.YamlScalarNode.ToString() -> string!
-override Yamlify.RepresentationModel.YamlSequenceNode.Accept(Yamlify.RepresentationModel.IYamlVisitor! visitor) -> void
-override Yamlify.RepresentationModel.YamlSequenceNode.DeepClone() -> Yamlify.RepresentationModel.YamlNode!
-override Yamlify.RepresentationModel.YamlSequenceNode.NodeType.get -> Yamlify.RepresentationModel.YamlNodeType
-override Yamlify.RepresentationModel.YamlSequenceNode.ToString() -> string!
+override Yamlify.Mark.Equals(object? obj) -> bool
+override Yamlify.Mark.GetHashCode() -> int
+override Yamlify.Mark.ToString() -> string!
+override Yamlify.Nodes.YamlAliasNode.Accept(Yamlify.Nodes.IYamlVisitor! visitor) -> void
+override Yamlify.Nodes.YamlAliasNode.DeepClone() -> Yamlify.Nodes.YamlNode!
+override Yamlify.Nodes.YamlAliasNode.NodeType.get -> Yamlify.Nodes.YamlNodeType
+override Yamlify.Nodes.YamlAliasNode.ToString() -> string!
+override Yamlify.Nodes.YamlMappingNode.Accept(Yamlify.Nodes.IYamlVisitor! visitor) -> void
+override Yamlify.Nodes.YamlMappingNode.DeepClone() -> Yamlify.Nodes.YamlNode!
+override Yamlify.Nodes.YamlMappingNode.NodeType.get -> Yamlify.Nodes.YamlNodeType
+override Yamlify.Nodes.YamlMappingNode.ToString() -> string!
+override Yamlify.Nodes.YamlScalarNode.Accept(Yamlify.Nodes.IYamlVisitor! visitor) -> void
+override Yamlify.Nodes.YamlScalarNode.DeepClone() -> Yamlify.Nodes.YamlNode!
+override Yamlify.Nodes.YamlScalarNode.Equals(object? obj) -> bool
+override Yamlify.Nodes.YamlScalarNode.GetHashCode() -> int
+override Yamlify.Nodes.YamlScalarNode.NodeType.get -> Yamlify.Nodes.YamlNodeType
+override Yamlify.Nodes.YamlScalarNode.ToString() -> string!
+override Yamlify.Nodes.YamlSequenceNode.Accept(Yamlify.Nodes.IYamlVisitor! visitor) -> void
+override Yamlify.Nodes.YamlSequenceNode.DeepClone() -> Yamlify.Nodes.YamlNode!
+override Yamlify.Nodes.YamlSequenceNode.NodeType.get -> Yamlify.Nodes.YamlNodeType
+override Yamlify.Nodes.YamlSequenceNode.ToString() -> string!
 override Yamlify.Serialization.YamlConverter<T>.CanConvert(System.Type! typeToConvert) -> bool
 override Yamlify.Serialization.YamlPropertyInfo<TDeclaringType, TProperty>.Getter.get -> System.Func<object!, object?>?
 override Yamlify.Serialization.YamlPropertyInfo<TDeclaringType, TProperty>.IgnoreCondition.get -> Yamlify.Serialization.YamlIgnoreCondition?
@@ -71,22 +71,22 @@ override Yamlify.Serialization.YamlTypeInfo<T>.Converter.get -> Yamlify.Serializ
 override Yamlify.Serialization.YamlTypeInfo<T>.Options.get -> Yamlify.Serialization.YamlSerializerOptions?
 override Yamlify.Serialization.YamlTypeInfo<T>.Properties.get -> System.Collections.Generic.IReadOnlyList<Yamlify.Serialization.YamlPropertyInfo!>!
 override Yamlify.Serialization.YamlTypeInfo<T>.Type.get -> System.Type!
-static readonly Yamlify.RepresentationModel.YamlScalarNode.False -> Yamlify.RepresentationModel.YamlScalarNode!
-static readonly Yamlify.RepresentationModel.YamlScalarNode.Null -> Yamlify.RepresentationModel.YamlScalarNode!
-static readonly Yamlify.RepresentationModel.YamlScalarNode.True -> Yamlify.RepresentationModel.YamlScalarNode!
-static Yamlify.Core.Mark.Empty.get -> Yamlify.Core.Mark
-static Yamlify.Core.Mark.operator !=(Yamlify.Core.Mark left, Yamlify.Core.Mark right) -> bool
-static Yamlify.Core.Mark.operator ==(Yamlify.Core.Mark left, Yamlify.Core.Mark right) -> bool
-static Yamlify.Core.YamlReaderOptions.Default.get -> Yamlify.Core.YamlReaderOptions
-static Yamlify.Core.YamlWriterOptions.Default.get -> Yamlify.Core.YamlWriterOptions!
-static Yamlify.RepresentationModel.YamlNode.implicit operator Yamlify.RepresentationModel.YamlNode!(bool value) -> Yamlify.RepresentationModel.YamlNode!
-static Yamlify.RepresentationModel.YamlNode.implicit operator Yamlify.RepresentationModel.YamlNode!(double value) -> Yamlify.RepresentationModel.YamlNode!
-static Yamlify.RepresentationModel.YamlNode.implicit operator Yamlify.RepresentationModel.YamlNode!(int value) -> Yamlify.RepresentationModel.YamlNode!
-static Yamlify.RepresentationModel.YamlNode.implicit operator Yamlify.RepresentationModel.YamlNode!(long value) -> Yamlify.RepresentationModel.YamlNode!
-static Yamlify.RepresentationModel.YamlNode.implicit operator Yamlify.RepresentationModel.YamlNode!(string! value) -> Yamlify.RepresentationModel.YamlNode!
-static Yamlify.RepresentationModel.YamlStream.Load(string! yaml) -> Yamlify.RepresentationModel.YamlStream!
-static Yamlify.RepresentationModel.YamlStream.Load(System.ReadOnlySpan<byte> utf8Yaml) -> Yamlify.RepresentationModel.YamlStream!
-static Yamlify.RepresentationModel.YamlStream.LoadFromFile(string! path) -> Yamlify.RepresentationModel.YamlStream!
+static readonly Yamlify.Nodes.YamlScalarNode.False -> Yamlify.Nodes.YamlScalarNode!
+static readonly Yamlify.Nodes.YamlScalarNode.Null -> Yamlify.Nodes.YamlScalarNode!
+static readonly Yamlify.Nodes.YamlScalarNode.True -> Yamlify.Nodes.YamlScalarNode!
+static Yamlify.Mark.Empty.get -> Yamlify.Mark
+static Yamlify.Mark.operator !=(Yamlify.Mark left, Yamlify.Mark right) -> bool
+static Yamlify.Mark.operator ==(Yamlify.Mark left, Yamlify.Mark right) -> bool
+static Yamlify.YamlReaderOptions.Default.get -> Yamlify.YamlReaderOptions
+static Yamlify.YamlWriterOptions.Default.get -> Yamlify.YamlWriterOptions!
+static Yamlify.Nodes.YamlNode.implicit operator Yamlify.Nodes.YamlNode!(bool value) -> Yamlify.Nodes.YamlNode!
+static Yamlify.Nodes.YamlNode.implicit operator Yamlify.Nodes.YamlNode!(double value) -> Yamlify.Nodes.YamlNode!
+static Yamlify.Nodes.YamlNode.implicit operator Yamlify.Nodes.YamlNode!(int value) -> Yamlify.Nodes.YamlNode!
+static Yamlify.Nodes.YamlNode.implicit operator Yamlify.Nodes.YamlNode!(long value) -> Yamlify.Nodes.YamlNode!
+static Yamlify.Nodes.YamlNode.implicit operator Yamlify.Nodes.YamlNode!(string! value) -> Yamlify.Nodes.YamlNode!
+static Yamlify.Nodes.YamlStream.Load(string! yaml) -> Yamlify.Nodes.YamlStream!
+static Yamlify.Nodes.YamlStream.Load(System.ReadOnlySpan<byte> utf8Yaml) -> Yamlify.Nodes.YamlStream!
+static Yamlify.Nodes.YamlStream.LoadFromFile(string! path) -> Yamlify.Nodes.YamlStream!
 static Yamlify.Schema.CoreSchema.Instance.get -> Yamlify.Schema.CoreSchema!
 static Yamlify.Schema.CoreSchema.IsNull(System.ReadOnlySpan<char> value) -> bool
 static Yamlify.Schema.CoreSchema.TryGetBoolean(System.ReadOnlySpan<char> value, out bool result) -> bool
@@ -99,7 +99,7 @@ static Yamlify.Serialization.ReferenceHandler.Preserve.get -> Yamlify.Serializat
 static Yamlify.Serialization.YamlNamingPolicy.CamelCase.get -> Yamlify.Serialization.YamlNamingPolicy!
 static Yamlify.Serialization.YamlNamingPolicy.KebabCase.get -> Yamlify.Serialization.YamlNamingPolicy!
 static Yamlify.Serialization.YamlNamingPolicy.SnakeCase.get -> Yamlify.Serialization.YamlNamingPolicy!
-static Yamlify.Serialization.YamlSerializer.Deserialize<TValue>(ref Yamlify.Core.Utf8YamlReader reader, Yamlify.Serialization.YamlTypeInfo<TValue>! typeInfo) -> TValue?
+static Yamlify.Serialization.YamlSerializer.Deserialize<TValue>(ref Yamlify.Utf8YamlReader reader, Yamlify.Serialization.YamlTypeInfo<TValue>! typeInfo) -> TValue?
 static Yamlify.Serialization.YamlSerializer.Deserialize<TValue>(string! yaml) -> TValue?
 static Yamlify.Serialization.YamlSerializer.Deserialize<TValue>(string! yaml, Yamlify.Serialization.YamlSerializerContext! context) -> TValue?
 static Yamlify.Serialization.YamlSerializer.Deserialize<TValue>(string! yaml, Yamlify.Serialization.YamlSerializerOptions! options) -> TValue?
@@ -119,298 +119,298 @@ static Yamlify.Serialization.YamlSerializer.Serialize<TValue>(TValue value, Yaml
 static Yamlify.Serialization.YamlSerializer.Serialize<TValue>(TValue value, Yamlify.Serialization.YamlSerializerOptions! options) -> string!
 static Yamlify.Serialization.YamlSerializer.Serialize<TValue>(TValue value, Yamlify.Serialization.YamlTypeInfo<TValue>! typeInfo) -> string!
 static Yamlify.Serialization.YamlSerializer.Serialize<TValue>(TValue value, Yamlify.Serialization.YamlTypeInfo<TValue>! typeInfo, Yamlify.Serialization.YamlSerializerOptions! options) -> string!
-static Yamlify.Serialization.YamlSerializer.Serialize<TValue>(Yamlify.Core.Utf8YamlWriter! writer, TValue value, Yamlify.Serialization.YamlTypeInfo<TValue>! typeInfo) -> void
+static Yamlify.Serialization.YamlSerializer.Serialize<TValue>(Yamlify.Utf8YamlWriter! writer, TValue value, Yamlify.Serialization.YamlTypeInfo<TValue>! typeInfo) -> void
 static Yamlify.Serialization.YamlSerializer.SerializeAsync<TValue>(System.IO.Stream! stream, TValue value, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 static Yamlify.Serialization.YamlSerializer.SerializeAsync<TValue>(System.IO.Stream! stream, TValue value, Yamlify.Serialization.YamlTypeInfo<TValue>! typeInfo, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 static Yamlify.Serialization.YamlSerializer.SerializeToUtf8Bytes<TValue>(TValue value, Yamlify.Serialization.YamlTypeInfo<TValue>! typeInfo) -> byte[]!
 static Yamlify.Serialization.YamlSerializerOptions.CurrentResolver.get -> Yamlify.Serialization.ReferenceResolver?
 static Yamlify.Serialization.YamlSerializerOptions.Default.get -> Yamlify.Serialization.YamlSerializerOptions!
-Yamlify.Core.ChompingIndicator
-Yamlify.Core.ChompingIndicator.Clip = 0 -> Yamlify.Core.ChompingIndicator
-Yamlify.Core.ChompingIndicator.Keep = 2 -> Yamlify.Core.ChompingIndicator
-Yamlify.Core.ChompingIndicator.Strip = 1 -> Yamlify.Core.ChompingIndicator
-Yamlify.Core.CollectionStyle
-Yamlify.Core.CollectionStyle.Any = 0 -> Yamlify.Core.CollectionStyle
-Yamlify.Core.CollectionStyle.Block = 1 -> Yamlify.Core.CollectionStyle
-Yamlify.Core.CollectionStyle.Flow = 2 -> Yamlify.Core.CollectionStyle
-Yamlify.Core.Mark
-Yamlify.Core.Mark.Column.get -> int
-Yamlify.Core.Mark.Equals(Yamlify.Core.Mark other) -> bool
-Yamlify.Core.Mark.Line.get -> int
-Yamlify.Core.Mark.Mark() -> void
-Yamlify.Core.Mark.Mark(long offset, int line, int column) -> void
-Yamlify.Core.Mark.Offset.get -> long
-Yamlify.Core.ScalarStyle
-Yamlify.Core.ScalarStyle.Any = 0 -> Yamlify.Core.ScalarStyle
-Yamlify.Core.ScalarStyle.DoubleQuoted = 3 -> Yamlify.Core.ScalarStyle
-Yamlify.Core.ScalarStyle.Folded = 5 -> Yamlify.Core.ScalarStyle
-Yamlify.Core.ScalarStyle.Literal = 4 -> Yamlify.Core.ScalarStyle
-Yamlify.Core.ScalarStyle.Plain = 1 -> Yamlify.Core.ScalarStyle
-Yamlify.Core.ScalarStyle.SingleQuoted = 2 -> Yamlify.Core.ScalarStyle
-Yamlify.Core.Utf8YamlReader
-Yamlify.Core.Utf8YamlReader.BytesConsumed.get -> long
-Yamlify.Core.Utf8YamlReader.CollectionStyle.get -> Yamlify.Core.CollectionStyle
-Yamlify.Core.Utf8YamlReader.CurrentDepth.get -> int
-Yamlify.Core.Utf8YamlReader.CurrentState.get -> Yamlify.Core.YamlReaderState
-Yamlify.Core.Utf8YamlReader.GetString() -> string?
-Yamlify.Core.Utf8YamlReader.HasValueSequence.get -> bool
-Yamlify.Core.Utf8YamlReader.IsFinalBlock.get -> bool
-Yamlify.Core.Utf8YamlReader.IsNull() -> bool
-Yamlify.Core.Utf8YamlReader.Position.get -> Yamlify.Core.Mark
-Yamlify.Core.Utf8YamlReader.Read() -> bool
-Yamlify.Core.Utf8YamlReader.ScalarStyle.get -> Yamlify.Core.ScalarStyle
-Yamlify.Core.Utf8YamlReader.Skip() -> void
-Yamlify.Core.Utf8YamlReader.TokenStart.get -> Yamlify.Core.Mark
-Yamlify.Core.Utf8YamlReader.TokenType.get -> Yamlify.Core.YamlTokenType
-Yamlify.Core.Utf8YamlReader.TryGetBoolean(out bool value) -> bool
-Yamlify.Core.Utf8YamlReader.TryGetDouble(out double value) -> bool
-Yamlify.Core.Utf8YamlReader.TryGetInt32(out int value) -> bool
-Yamlify.Core.Utf8YamlReader.TryGetInt64(out long value) -> bool
-Yamlify.Core.Utf8YamlReader.Utf8YamlReader() -> void
-Yamlify.Core.Utf8YamlReader.Utf8YamlReader(System.ReadOnlySpan<byte> yamlData, bool isFinalBlock, Yamlify.Core.YamlReaderState state) -> void
-Yamlify.Core.Utf8YamlReader.Utf8YamlReader(System.ReadOnlySpan<byte> yamlData, Yamlify.Core.YamlReaderOptions options = default(Yamlify.Core.YamlReaderOptions)) -> void
-Yamlify.Core.Utf8YamlReader.ValueSpan.get -> System.ReadOnlySpan<byte>
-Yamlify.Core.Utf8YamlWriter
-Yamlify.Core.Utf8YamlWriter.BytesWritten.get -> long
-Yamlify.Core.Utf8YamlWriter.CurrentDepth.get -> int
-Yamlify.Core.Utf8YamlWriter.Dispose() -> void
-Yamlify.Core.Utf8YamlWriter.Flush() -> void
-Yamlify.Core.Utf8YamlWriter.Options.get -> Yamlify.Core.YamlWriterOptions!
-Yamlify.Core.Utf8YamlWriter.Reset() -> void
-Yamlify.Core.Utf8YamlWriter.Utf8YamlWriter(System.Buffers.IBufferWriter<byte>! output, Yamlify.Core.YamlWriterOptions? options = null) -> void
-Yamlify.Core.Utf8YamlWriter.Utf8YamlWriter(System.IO.Stream! stream, Yamlify.Core.YamlWriterOptions? options = null) -> void
-Yamlify.Core.Utf8YamlWriter.WriteAlias(string! anchorName) -> void
-Yamlify.Core.Utf8YamlWriter.WriteAnchor(string! anchorName) -> void
-Yamlify.Core.Utf8YamlWriter.WriteBoolean(bool value) -> void
-Yamlify.Core.Utf8YamlWriter.WriteComment(string! comment) -> void
-Yamlify.Core.Utf8YamlWriter.WriteDocumentEnd() -> void
-Yamlify.Core.Utf8YamlWriter.WriteDocumentStart() -> void
-Yamlify.Core.Utf8YamlWriter.WriteFoldedScalar(string! value) -> void
-Yamlify.Core.Utf8YamlWriter.WriteLiteralScalar(string! value) -> void
-Yamlify.Core.Utf8YamlWriter.WriteMappingEnd() -> void
-Yamlify.Core.Utf8YamlWriter.WriteMappingStart(Yamlify.Core.CollectionStyle style = Yamlify.Core.CollectionStyle.Block) -> void
-Yamlify.Core.Utf8YamlWriter.WriteNull() -> void
-Yamlify.Core.Utf8YamlWriter.WriteNumber(double value) -> void
-Yamlify.Core.Utf8YamlWriter.WriteNumber(int value) -> void
-Yamlify.Core.Utf8YamlWriter.WriteNumber(long value) -> void
-Yamlify.Core.Utf8YamlWriter.WritePropertyName(string! propertyName) -> void
-Yamlify.Core.Utf8YamlWriter.WritePropertyName(System.ReadOnlySpan<char> propertyName) -> void
-Yamlify.Core.Utf8YamlWriter.WriteSequenceEnd() -> void
-Yamlify.Core.Utf8YamlWriter.WriteSequenceStart(Yamlify.Core.CollectionStyle style = Yamlify.Core.CollectionStyle.Block) -> void
-Yamlify.Core.Utf8YamlWriter.WriteStreamEnd() -> void
-Yamlify.Core.Utf8YamlWriter.WriteStreamStart() -> void
-Yamlify.Core.Utf8YamlWriter.WriteString(string? value) -> void
-Yamlify.Core.Utf8YamlWriter.WriteString(System.ReadOnlySpan<char> value) -> void
-Yamlify.Core.Utf8YamlWriter.WriteTag(string! tag) -> void
-Yamlify.Core.YamlReaderOptions
-Yamlify.Core.YamlReaderOptions.AllowTrailingCommas.get -> bool
-Yamlify.Core.YamlReaderOptions.AllowTrailingCommas.init -> void
-Yamlify.Core.YamlReaderOptions.ReadComments.get -> bool
-Yamlify.Core.YamlReaderOptions.ReadComments.init -> void
-Yamlify.Core.YamlReaderOptions.MaxDepth.get -> int
-Yamlify.Core.YamlReaderOptions.MaxDepth.init -> void
-Yamlify.Core.YamlReaderOptions.StrictDuplicateKeys.get -> bool
-Yamlify.Core.YamlReaderOptions.StrictDuplicateKeys.init -> void
-Yamlify.Core.YamlReaderOptions.YamlReaderOptions() -> void
-Yamlify.Core.YamlReaderState
-Yamlify.Core.YamlReaderState.YamlReaderState() -> void
-Yamlify.Core.YamlReaderState.YamlReaderState(Yamlify.Core.YamlReaderOptions options = default(Yamlify.Core.YamlReaderOptions)) -> void
-Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.Alias = 10 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.Anchor = 12 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.BlockEntry = 16 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.Comment = 13 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.DocumentEnd = 4 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.DocumentStart = 3 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.Key = 17 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.MappingEnd = 6 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.MappingStart = 5 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.None = 0 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.Scalar = 9 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.SequenceEnd = 8 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.SequenceStart = 7 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.StreamEnd = 2 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.StreamStart = 1 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.Tag = 11 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.TagDirective = 15 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.Value = 18 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlTokenType.VersionDirective = 14 -> Yamlify.Core.YamlTokenType
-Yamlify.Core.YamlWriterOptions
-Yamlify.Core.YamlWriterOptions.DefaultScalarStyle.get -> Yamlify.Core.ScalarStyle
-Yamlify.Core.YamlWriterOptions.DefaultScalarStyle.init -> void
-Yamlify.Core.YamlWriterOptions.EmitDocumentMarkers.get -> bool
-Yamlify.Core.YamlWriterOptions.EmitDocumentMarkers.init -> void
-Yamlify.Core.YamlWriterOptions.EmitYamlDirective.get -> bool
-Yamlify.Core.YamlWriterOptions.EmitYamlDirective.init -> void
-Yamlify.Core.YamlWriterOptions.IndentSequenceItems.get -> bool
-Yamlify.Core.YamlWriterOptions.IndentSequenceItems.init -> void
-Yamlify.Core.YamlWriterOptions.IndentSize.get -> int
-Yamlify.Core.YamlWriterOptions.IndentSize.init -> void
-Yamlify.Core.YamlWriterOptions.MaxLineLength.get -> int
-Yamlify.Core.YamlWriterOptions.MaxLineLength.init -> void
-Yamlify.Core.YamlWriterOptions.PreferFlowStyle.get -> bool
-Yamlify.Core.YamlWriterOptions.PreferFlowStyle.init -> void
-Yamlify.Core.YamlWriterOptions.IgnoreNullValues.get -> bool
-Yamlify.Core.YamlWriterOptions.IgnoreNullValues.init -> void
-Yamlify.Core.YamlWriterOptions.YamlWriterOptions() -> void
-Yamlify.Exceptions.MaxRecursionDepthExceededException
-Yamlify.Exceptions.MaxRecursionDepthExceededException.CurrentDepth.get -> int
-Yamlify.Exceptions.MaxRecursionDepthExceededException.MaxDepth.get -> int
-Yamlify.Exceptions.MaxRecursionDepthExceededException.MaxRecursionDepthExceededException(int maxDepth, int currentDepth) -> void
-Yamlify.Exceptions.MaxRecursionDepthExceededException.MaxRecursionDepthExceededException(int maxDepth, int currentDepth, Yamlify.Core.Mark position) -> void
-Yamlify.Exceptions.MaxRecursionDepthExceededException.MaxRecursionDepthExceededException(string! message) -> void
-Yamlify.Exceptions.MaxRecursionDepthExceededException.MaxRecursionDepthExceededException(string! message, System.Exception! innerException) -> void
-Yamlify.Exceptions.YamlException
-Yamlify.Exceptions.YamlException.Path.get -> string?
-Yamlify.Exceptions.YamlException.Position.get -> Yamlify.Core.Mark?
-Yamlify.Exceptions.YamlException.YamlException() -> void
-Yamlify.Exceptions.YamlException.YamlException(string! message) -> void
-Yamlify.Exceptions.YamlException.YamlException(string! message, string! path) -> void
-Yamlify.Exceptions.YamlException.YamlException(string! message, string! path, System.Exception! innerException) -> void
-Yamlify.Exceptions.YamlException.YamlException(string! message, System.Exception! innerException) -> void
-Yamlify.Exceptions.YamlException.YamlException(string! message, Yamlify.Core.Mark position) -> void
-Yamlify.Exceptions.YamlException.YamlException(string! message, Yamlify.Core.Mark position, System.Exception! innerException) -> void
-Yamlify.Exceptions.YamlSemanticException
-Yamlify.Exceptions.YamlSemanticException.YamlSemanticException(string! message) -> void
-Yamlify.Exceptions.YamlSemanticException.YamlSemanticException(string! message, System.Exception! innerException) -> void
-Yamlify.Exceptions.YamlSemanticException.YamlSemanticException(string! message, Yamlify.Core.Mark position) -> void
-Yamlify.Exceptions.YamlSyntaxException
-Yamlify.Exceptions.YamlSyntaxException.YamlSyntaxException(string! message, Yamlify.Core.Mark position) -> void
-Yamlify.Exceptions.YamlSyntaxException.YamlSyntaxException(string! message, Yamlify.Core.Mark position, System.Exception! innerException) -> void
-Yamlify.RepresentationModel.IYamlVisitor
-Yamlify.RepresentationModel.IYamlVisitor.Visit(Yamlify.RepresentationModel.YamlAliasNode! alias) -> void
-Yamlify.RepresentationModel.IYamlVisitor.Visit(Yamlify.RepresentationModel.YamlMappingNode! mapping) -> void
-Yamlify.RepresentationModel.IYamlVisitor.Visit(Yamlify.RepresentationModel.YamlScalarNode! scalar) -> void
-Yamlify.RepresentationModel.IYamlVisitor.Visit(Yamlify.RepresentationModel.YamlSequenceNode! sequence) -> void
-Yamlify.RepresentationModel.TagDirective
-Yamlify.RepresentationModel.TagDirective.Handle.get -> string!
-Yamlify.RepresentationModel.TagDirective.Handle.init -> void
-Yamlify.RepresentationModel.TagDirective.Prefix.get -> string!
-Yamlify.RepresentationModel.TagDirective.Prefix.init -> void
-Yamlify.RepresentationModel.TagDirective.TagDirective() -> void
-Yamlify.RepresentationModel.TagDirective.TagDirective(string! Handle, string! Prefix) -> void
-Yamlify.RepresentationModel.YamlAliasNode
-Yamlify.RepresentationModel.YamlAliasNode.AnchorName.get -> string!
-Yamlify.RepresentationModel.YamlAliasNode.AnchorName.set -> void
-Yamlify.RepresentationModel.YamlAliasNode.YamlAliasNode(string! anchorName) -> void
-Yamlify.RepresentationModel.YamlDocument
-Yamlify.RepresentationModel.YamlDocument.Accept(Yamlify.RepresentationModel.IYamlVisitor! visitor) -> void
-Yamlify.RepresentationModel.YamlDocument.DeepClone() -> Yamlify.RepresentationModel.YamlDocument!
-Yamlify.RepresentationModel.YamlDocument.HasExplicitEnd.get -> bool
-Yamlify.RepresentationModel.YamlDocument.HasExplicitEnd.set -> void
-Yamlify.RepresentationModel.YamlDocument.HasExplicitStart.get -> bool
-Yamlify.RepresentationModel.YamlDocument.HasExplicitStart.set -> void
-Yamlify.RepresentationModel.YamlDocument.RootNode.get -> Yamlify.RepresentationModel.YamlNode?
-Yamlify.RepresentationModel.YamlDocument.RootNode.set -> void
-Yamlify.RepresentationModel.YamlDocument.TagDirectives.get -> System.Collections.Generic.IList<Yamlify.RepresentationModel.TagDirective>!
-Yamlify.RepresentationModel.YamlDocument.Version.get -> string?
-Yamlify.RepresentationModel.YamlDocument.Version.set -> void
-Yamlify.RepresentationModel.YamlDocument.YamlDocument() -> void
-Yamlify.RepresentationModel.YamlDocument.YamlDocument(Yamlify.RepresentationModel.YamlNode! rootNode) -> void
-Yamlify.RepresentationModel.YamlMappingNode
-Yamlify.RepresentationModel.YamlMappingNode.Add(string! key, string! value) -> void
-Yamlify.RepresentationModel.YamlMappingNode.Add(string! key, Yamlify.RepresentationModel.YamlNode! value) -> void
-Yamlify.RepresentationModel.YamlMappingNode.Add(Yamlify.RepresentationModel.YamlNode! key, Yamlify.RepresentationModel.YamlNode! value) -> void
-Yamlify.RepresentationModel.YamlMappingNode.Clear() -> void
-Yamlify.RepresentationModel.YamlMappingNode.ContainsKey(string! key) -> bool
-Yamlify.RepresentationModel.YamlMappingNode.ContainsKey(Yamlify.RepresentationModel.YamlNode! key) -> bool
-Yamlify.RepresentationModel.YamlMappingNode.Count.get -> int
-Yamlify.RepresentationModel.YamlMappingNode.GetEnumerator() -> System.Collections.Generic.IEnumerator<System.Collections.Generic.KeyValuePair<Yamlify.RepresentationModel.YamlNode!, Yamlify.RepresentationModel.YamlNode!>>!
-Yamlify.RepresentationModel.YamlMappingNode.Keys.get -> System.Collections.Generic.ICollection<Yamlify.RepresentationModel.YamlNode!>!
-Yamlify.RepresentationModel.YamlMappingNode.Remove(Yamlify.RepresentationModel.YamlNode! key) -> bool
-Yamlify.RepresentationModel.YamlMappingNode.Style.get -> Yamlify.Core.CollectionStyle
-Yamlify.RepresentationModel.YamlMappingNode.Style.set -> void
-Yamlify.RepresentationModel.YamlMappingNode.this[string! key].get -> Yamlify.RepresentationModel.YamlNode!
-Yamlify.RepresentationModel.YamlMappingNode.this[string! key].set -> void
-Yamlify.RepresentationModel.YamlMappingNode.this[Yamlify.RepresentationModel.YamlNode! key].get -> Yamlify.RepresentationModel.YamlNode!
-Yamlify.RepresentationModel.YamlMappingNode.this[Yamlify.RepresentationModel.YamlNode! key].set -> void
-Yamlify.RepresentationModel.YamlMappingNode.TryGetValue(string! key, out Yamlify.RepresentationModel.YamlNode! value) -> bool
-Yamlify.RepresentationModel.YamlMappingNode.TryGetValue(Yamlify.RepresentationModel.YamlNode! key, out Yamlify.RepresentationModel.YamlNode! value) -> bool
-Yamlify.RepresentationModel.YamlMappingNode.Values.get -> System.Collections.Generic.ICollection<Yamlify.RepresentationModel.YamlNode!>!
-Yamlify.RepresentationModel.YamlMappingNode.YamlMappingNode() -> void
-Yamlify.RepresentationModel.YamlMappingNode.YamlMappingNode(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<Yamlify.RepresentationModel.YamlNode!, Yamlify.RepresentationModel.YamlNode!>>! children) -> void
-Yamlify.RepresentationModel.YamlNode
-Yamlify.RepresentationModel.YamlNode.Anchor.get -> string?
-Yamlify.RepresentationModel.YamlNode.Anchor.set -> void
-Yamlify.RepresentationModel.YamlNode.End.get -> Yamlify.Core.Mark
-Yamlify.RepresentationModel.YamlNode.Start.get -> Yamlify.Core.Mark
-Yamlify.RepresentationModel.YamlNode.Tag.get -> string?
-Yamlify.RepresentationModel.YamlNode.Tag.set -> void
-Yamlify.RepresentationModel.YamlNode.YamlNode() -> void
-Yamlify.RepresentationModel.YamlNodeType
-Yamlify.RepresentationModel.YamlNodeType.Alias = 3 -> Yamlify.RepresentationModel.YamlNodeType
-Yamlify.RepresentationModel.YamlNodeType.Mapping = 2 -> Yamlify.RepresentationModel.YamlNodeType
-Yamlify.RepresentationModel.YamlNodeType.Scalar = 0 -> Yamlify.RepresentationModel.YamlNodeType
-Yamlify.RepresentationModel.YamlNodeType.Sequence = 1 -> Yamlify.RepresentationModel.YamlNodeType
-Yamlify.RepresentationModel.YamlScalarNode
-Yamlify.RepresentationModel.YamlScalarNode.GetBoolean() -> bool
-Yamlify.RepresentationModel.YamlScalarNode.GetDouble() -> double
-Yamlify.RepresentationModel.YamlScalarNode.GetInt32() -> int
-Yamlify.RepresentationModel.YamlScalarNode.GetInt64() -> long
-Yamlify.RepresentationModel.YamlScalarNode.IsNull.get -> bool
-Yamlify.RepresentationModel.YamlScalarNode.Style.get -> Yamlify.Core.ScalarStyle
-Yamlify.RepresentationModel.YamlScalarNode.Style.set -> void
-Yamlify.RepresentationModel.YamlScalarNode.Value.get -> string?
-Yamlify.RepresentationModel.YamlScalarNode.Value.set -> void
-Yamlify.RepresentationModel.YamlScalarNode.YamlScalarNode() -> void
-Yamlify.RepresentationModel.YamlScalarNode.YamlScalarNode(string? value) -> void
-Yamlify.RepresentationModel.YamlSequenceNode
-Yamlify.RepresentationModel.YamlSequenceNode.Add(Yamlify.RepresentationModel.YamlNode! item) -> void
-Yamlify.RepresentationModel.YamlSequenceNode.Clear() -> void
-Yamlify.RepresentationModel.YamlSequenceNode.Contains(Yamlify.RepresentationModel.YamlNode! item) -> bool
-Yamlify.RepresentationModel.YamlSequenceNode.Count.get -> int
-Yamlify.RepresentationModel.YamlSequenceNode.GetEnumerator() -> System.Collections.Generic.IEnumerator<Yamlify.RepresentationModel.YamlNode!>!
-Yamlify.RepresentationModel.YamlSequenceNode.IndexOf(Yamlify.RepresentationModel.YamlNode! item) -> int
-Yamlify.RepresentationModel.YamlSequenceNode.Insert(int index, Yamlify.RepresentationModel.YamlNode! item) -> void
-Yamlify.RepresentationModel.YamlSequenceNode.Remove(Yamlify.RepresentationModel.YamlNode! item) -> bool
-Yamlify.RepresentationModel.YamlSequenceNode.RemoveAt(int index) -> void
-Yamlify.RepresentationModel.YamlSequenceNode.Style.get -> Yamlify.Core.CollectionStyle
-Yamlify.RepresentationModel.YamlSequenceNode.Style.set -> void
-Yamlify.RepresentationModel.YamlSequenceNode.this[int index].get -> Yamlify.RepresentationModel.YamlNode!
-Yamlify.RepresentationModel.YamlSequenceNode.this[int index].set -> void
-Yamlify.RepresentationModel.YamlSequenceNode.YamlSequenceNode() -> void
-Yamlify.RepresentationModel.YamlSequenceNode.YamlSequenceNode(params Yamlify.RepresentationModel.YamlNode![]! children) -> void
-Yamlify.RepresentationModel.YamlSequenceNode.YamlSequenceNode(System.Collections.Generic.IEnumerable<Yamlify.RepresentationModel.YamlNode!>! children) -> void
-Yamlify.RepresentationModel.YamlStream
-Yamlify.RepresentationModel.YamlStream.Add(Yamlify.RepresentationModel.YamlDocument! item) -> void
-Yamlify.RepresentationModel.YamlStream.Clear() -> void
-Yamlify.RepresentationModel.YamlStream.Contains(Yamlify.RepresentationModel.YamlDocument! item) -> bool
-Yamlify.RepresentationModel.YamlStream.Count.get -> int
-Yamlify.RepresentationModel.YamlStream.GetEnumerator() -> System.Collections.Generic.IEnumerator<Yamlify.RepresentationModel.YamlDocument!>!
-Yamlify.RepresentationModel.YamlStream.IndexOf(Yamlify.RepresentationModel.YamlDocument! item) -> int
-Yamlify.RepresentationModel.YamlStream.Insert(int index, Yamlify.RepresentationModel.YamlDocument! item) -> void
-Yamlify.RepresentationModel.YamlStream.Remove(Yamlify.RepresentationModel.YamlDocument! item) -> bool
-Yamlify.RepresentationModel.YamlStream.RemoveAt(int index) -> void
-Yamlify.RepresentationModel.YamlStream.Save() -> string!
-Yamlify.RepresentationModel.YamlStream.Save(System.IO.Stream! output) -> void
-Yamlify.RepresentationModel.YamlStream.SaveToFile(string! path) -> void
-Yamlify.RepresentationModel.YamlStream.this[int index].get -> Yamlify.RepresentationModel.YamlDocument!
-Yamlify.RepresentationModel.YamlStream.this[int index].set -> void
-Yamlify.RepresentationModel.YamlStream.YamlStream() -> void
-Yamlify.RepresentationModel.YamlStream.YamlStream(params Yamlify.RepresentationModel.YamlDocument![]! documents) -> void
-Yamlify.RepresentationModel.YamlStream.YamlStream(System.Collections.Generic.IEnumerable<Yamlify.RepresentationModel.YamlDocument!>! documents) -> void
+Yamlify.ChompingIndicator
+Yamlify.ChompingIndicator.Clip = 0 -> Yamlify.ChompingIndicator
+Yamlify.ChompingIndicator.Keep = 2 -> Yamlify.ChompingIndicator
+Yamlify.ChompingIndicator.Strip = 1 -> Yamlify.ChompingIndicator
+Yamlify.CollectionStyle
+Yamlify.CollectionStyle.Any = 0 -> Yamlify.CollectionStyle
+Yamlify.CollectionStyle.Block = 1 -> Yamlify.CollectionStyle
+Yamlify.CollectionStyle.Flow = 2 -> Yamlify.CollectionStyle
+Yamlify.Mark
+Yamlify.Mark.Column.get -> int
+Yamlify.Mark.Equals(Yamlify.Mark other) -> bool
+Yamlify.Mark.Line.get -> int
+Yamlify.Mark.Mark() -> void
+Yamlify.Mark.Mark(long offset, int line, int column) -> void
+Yamlify.Mark.Offset.get -> long
+Yamlify.ScalarStyle
+Yamlify.ScalarStyle.Any = 0 -> Yamlify.ScalarStyle
+Yamlify.ScalarStyle.DoubleQuoted = 3 -> Yamlify.ScalarStyle
+Yamlify.ScalarStyle.Folded = 5 -> Yamlify.ScalarStyle
+Yamlify.ScalarStyle.Literal = 4 -> Yamlify.ScalarStyle
+Yamlify.ScalarStyle.Plain = 1 -> Yamlify.ScalarStyle
+Yamlify.ScalarStyle.SingleQuoted = 2 -> Yamlify.ScalarStyle
+Yamlify.Utf8YamlReader
+Yamlify.Utf8YamlReader.BytesConsumed.get -> long
+Yamlify.Utf8YamlReader.CollectionStyle.get -> Yamlify.CollectionStyle
+Yamlify.Utf8YamlReader.CurrentDepth.get -> int
+Yamlify.Utf8YamlReader.CurrentState.get -> Yamlify.YamlReaderState
+Yamlify.Utf8YamlReader.GetString() -> string?
+Yamlify.Utf8YamlReader.HasValueSequence.get -> bool
+Yamlify.Utf8YamlReader.IsFinalBlock.get -> bool
+Yamlify.Utf8YamlReader.IsNull() -> bool
+Yamlify.Utf8YamlReader.Position.get -> Yamlify.Mark
+Yamlify.Utf8YamlReader.Read() -> bool
+Yamlify.Utf8YamlReader.ScalarStyle.get -> Yamlify.ScalarStyle
+Yamlify.Utf8YamlReader.Skip() -> void
+Yamlify.Utf8YamlReader.TokenStart.get -> Yamlify.Mark
+Yamlify.Utf8YamlReader.TokenType.get -> Yamlify.YamlTokenType
+Yamlify.Utf8YamlReader.TryGetBoolean(out bool value) -> bool
+Yamlify.Utf8YamlReader.TryGetDouble(out double value) -> bool
+Yamlify.Utf8YamlReader.TryGetInt32(out int value) -> bool
+Yamlify.Utf8YamlReader.TryGetInt64(out long value) -> bool
+Yamlify.Utf8YamlReader.Utf8YamlReader() -> void
+Yamlify.Utf8YamlReader.Utf8YamlReader(System.ReadOnlySpan<byte> yamlData, bool isFinalBlock, Yamlify.YamlReaderState state) -> void
+Yamlify.Utf8YamlReader.Utf8YamlReader(System.ReadOnlySpan<byte> yamlData, Yamlify.YamlReaderOptions options = default(Yamlify.YamlReaderOptions)) -> void
+Yamlify.Utf8YamlReader.ValueSpan.get -> System.ReadOnlySpan<byte>
+Yamlify.Utf8YamlWriter
+Yamlify.Utf8YamlWriter.BytesWritten.get -> long
+Yamlify.Utf8YamlWriter.CurrentDepth.get -> int
+Yamlify.Utf8YamlWriter.Dispose() -> void
+Yamlify.Utf8YamlWriter.Flush() -> void
+Yamlify.Utf8YamlWriter.Options.get -> Yamlify.YamlWriterOptions!
+Yamlify.Utf8YamlWriter.Reset() -> void
+Yamlify.Utf8YamlWriter.Utf8YamlWriter(System.Buffers.IBufferWriter<byte>! output, Yamlify.YamlWriterOptions? options = null) -> void
+Yamlify.Utf8YamlWriter.Utf8YamlWriter(System.IO.Stream! stream, Yamlify.YamlWriterOptions? options = null) -> void
+Yamlify.Utf8YamlWriter.WriteAlias(string! anchorName) -> void
+Yamlify.Utf8YamlWriter.WriteAnchor(string! anchorName) -> void
+Yamlify.Utf8YamlWriter.WriteBoolean(bool value) -> void
+Yamlify.Utf8YamlWriter.WriteComment(string! comment) -> void
+Yamlify.Utf8YamlWriter.WriteDocumentEnd() -> void
+Yamlify.Utf8YamlWriter.WriteDocumentStart() -> void
+Yamlify.Utf8YamlWriter.WriteFoldedScalar(string! value) -> void
+Yamlify.Utf8YamlWriter.WriteLiteralScalar(string! value) -> void
+Yamlify.Utf8YamlWriter.WriteMappingEnd() -> void
+Yamlify.Utf8YamlWriter.WriteMappingStart(Yamlify.CollectionStyle style = Yamlify.CollectionStyle.Block) -> void
+Yamlify.Utf8YamlWriter.WriteNull() -> void
+Yamlify.Utf8YamlWriter.WriteNumber(double value) -> void
+Yamlify.Utf8YamlWriter.WriteNumber(int value) -> void
+Yamlify.Utf8YamlWriter.WriteNumber(long value) -> void
+Yamlify.Utf8YamlWriter.WritePropertyName(string! propertyName) -> void
+Yamlify.Utf8YamlWriter.WritePropertyName(System.ReadOnlySpan<char> propertyName) -> void
+Yamlify.Utf8YamlWriter.WriteSequenceEnd() -> void
+Yamlify.Utf8YamlWriter.WriteSequenceStart(Yamlify.CollectionStyle style = Yamlify.CollectionStyle.Block) -> void
+Yamlify.Utf8YamlWriter.WriteStreamEnd() -> void
+Yamlify.Utf8YamlWriter.WriteStreamStart() -> void
+Yamlify.Utf8YamlWriter.WriteString(string? value) -> void
+Yamlify.Utf8YamlWriter.WriteString(System.ReadOnlySpan<char> value) -> void
+Yamlify.Utf8YamlWriter.WriteTag(string! tag) -> void
+Yamlify.YamlReaderOptions
+Yamlify.YamlReaderOptions.AllowTrailingCommas.get -> bool
+Yamlify.YamlReaderOptions.AllowTrailingCommas.init -> void
+Yamlify.YamlReaderOptions.ReadComments.get -> bool
+Yamlify.YamlReaderOptions.ReadComments.init -> void
+Yamlify.YamlReaderOptions.MaxDepth.get -> int
+Yamlify.YamlReaderOptions.MaxDepth.init -> void
+Yamlify.YamlReaderOptions.StrictDuplicateKeys.get -> bool
+Yamlify.YamlReaderOptions.StrictDuplicateKeys.init -> void
+Yamlify.YamlReaderOptions.YamlReaderOptions() -> void
+Yamlify.YamlReaderState
+Yamlify.YamlReaderState.YamlReaderState() -> void
+Yamlify.YamlReaderState.YamlReaderState(Yamlify.YamlReaderOptions options = default(Yamlify.YamlReaderOptions)) -> void
+Yamlify.YamlTokenType
+Yamlify.YamlTokenType.Alias = 10 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.Anchor = 12 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.BlockEntry = 16 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.Comment = 13 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.DocumentEnd = 4 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.DocumentStart = 3 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.Key = 17 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.MappingEnd = 6 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.MappingStart = 5 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.None = 0 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.Scalar = 9 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.SequenceEnd = 8 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.SequenceStart = 7 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.StreamEnd = 2 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.StreamStart = 1 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.Tag = 11 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.TagDirective = 15 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.Value = 18 -> Yamlify.YamlTokenType
+Yamlify.YamlTokenType.VersionDirective = 14 -> Yamlify.YamlTokenType
+Yamlify.YamlWriterOptions
+Yamlify.YamlWriterOptions.DefaultScalarStyle.get -> Yamlify.ScalarStyle
+Yamlify.YamlWriterOptions.DefaultScalarStyle.init -> void
+Yamlify.YamlWriterOptions.EmitDocumentMarkers.get -> bool
+Yamlify.YamlWriterOptions.EmitDocumentMarkers.init -> void
+Yamlify.YamlWriterOptions.EmitYamlDirective.get -> bool
+Yamlify.YamlWriterOptions.EmitYamlDirective.init -> void
+Yamlify.YamlWriterOptions.IndentSequenceItems.get -> bool
+Yamlify.YamlWriterOptions.IndentSequenceItems.init -> void
+Yamlify.YamlWriterOptions.IndentSize.get -> int
+Yamlify.YamlWriterOptions.IndentSize.init -> void
+Yamlify.YamlWriterOptions.MaxLineLength.get -> int
+Yamlify.YamlWriterOptions.MaxLineLength.init -> void
+Yamlify.YamlWriterOptions.PreferFlowStyle.get -> bool
+Yamlify.YamlWriterOptions.PreferFlowStyle.init -> void
+Yamlify.YamlWriterOptions.IgnoreNullValues.get -> bool
+Yamlify.YamlWriterOptions.IgnoreNullValues.init -> void
+Yamlify.YamlWriterOptions.YamlWriterOptions() -> void
+Yamlify.MaxRecursionDepthExceededException
+Yamlify.MaxRecursionDepthExceededException.CurrentDepth.get -> int
+Yamlify.MaxRecursionDepthExceededException.MaxDepth.get -> int
+Yamlify.MaxRecursionDepthExceededException.MaxRecursionDepthExceededException(int maxDepth, int currentDepth) -> void
+Yamlify.MaxRecursionDepthExceededException.MaxRecursionDepthExceededException(int maxDepth, int currentDepth, Yamlify.Mark position) -> void
+Yamlify.MaxRecursionDepthExceededException.MaxRecursionDepthExceededException(string! message) -> void
+Yamlify.MaxRecursionDepthExceededException.MaxRecursionDepthExceededException(string! message, System.Exception! innerException) -> void
+Yamlify.YamlException
+Yamlify.YamlException.Path.get -> string?
+Yamlify.YamlException.Position.get -> Yamlify.Mark?
+Yamlify.YamlException.YamlException() -> void
+Yamlify.YamlException.YamlException(string! message) -> void
+Yamlify.YamlException.YamlException(string! message, string! path) -> void
+Yamlify.YamlException.YamlException(string! message, string! path, System.Exception! innerException) -> void
+Yamlify.YamlException.YamlException(string! message, System.Exception! innerException) -> void
+Yamlify.YamlException.YamlException(string! message, Yamlify.Mark position) -> void
+Yamlify.YamlException.YamlException(string! message, Yamlify.Mark position, System.Exception! innerException) -> void
+Yamlify.YamlSemanticException
+Yamlify.YamlSemanticException.YamlSemanticException(string! message) -> void
+Yamlify.YamlSemanticException.YamlSemanticException(string! message, System.Exception! innerException) -> void
+Yamlify.YamlSemanticException.YamlSemanticException(string! message, Yamlify.Mark position) -> void
+Yamlify.YamlSyntaxException
+Yamlify.YamlSyntaxException.YamlSyntaxException(string! message, Yamlify.Mark position) -> void
+Yamlify.YamlSyntaxException.YamlSyntaxException(string! message, Yamlify.Mark position, System.Exception! innerException) -> void
+Yamlify.Nodes.IYamlVisitor
+Yamlify.Nodes.IYamlVisitor.Visit(Yamlify.Nodes.YamlAliasNode! alias) -> void
+Yamlify.Nodes.IYamlVisitor.Visit(Yamlify.Nodes.YamlMappingNode! mapping) -> void
+Yamlify.Nodes.IYamlVisitor.Visit(Yamlify.Nodes.YamlScalarNode! scalar) -> void
+Yamlify.Nodes.IYamlVisitor.Visit(Yamlify.Nodes.YamlSequenceNode! sequence) -> void
+Yamlify.Nodes.TagDirective
+Yamlify.Nodes.TagDirective.Handle.get -> string!
+Yamlify.Nodes.TagDirective.Handle.init -> void
+Yamlify.Nodes.TagDirective.Prefix.get -> string!
+Yamlify.Nodes.TagDirective.Prefix.init -> void
+Yamlify.Nodes.TagDirective.TagDirective() -> void
+Yamlify.Nodes.TagDirective.TagDirective(string! Handle, string! Prefix) -> void
+Yamlify.Nodes.YamlAliasNode
+Yamlify.Nodes.YamlAliasNode.AnchorName.get -> string!
+Yamlify.Nodes.YamlAliasNode.AnchorName.set -> void
+Yamlify.Nodes.YamlAliasNode.YamlAliasNode(string! anchorName) -> void
+Yamlify.Nodes.YamlDocument
+Yamlify.Nodes.YamlDocument.Accept(Yamlify.Nodes.IYamlVisitor! visitor) -> void
+Yamlify.Nodes.YamlDocument.DeepClone() -> Yamlify.Nodes.YamlDocument!
+Yamlify.Nodes.YamlDocument.HasExplicitEnd.get -> bool
+Yamlify.Nodes.YamlDocument.HasExplicitEnd.set -> void
+Yamlify.Nodes.YamlDocument.HasExplicitStart.get -> bool
+Yamlify.Nodes.YamlDocument.HasExplicitStart.set -> void
+Yamlify.Nodes.YamlDocument.RootNode.get -> Yamlify.Nodes.YamlNode?
+Yamlify.Nodes.YamlDocument.RootNode.set -> void
+Yamlify.Nodes.YamlDocument.TagDirectives.get -> System.Collections.Generic.IList<Yamlify.Nodes.TagDirective>!
+Yamlify.Nodes.YamlDocument.Version.get -> string?
+Yamlify.Nodes.YamlDocument.Version.set -> void
+Yamlify.Nodes.YamlDocument.YamlDocument() -> void
+Yamlify.Nodes.YamlDocument.YamlDocument(Yamlify.Nodes.YamlNode! rootNode) -> void
+Yamlify.Nodes.YamlMappingNode
+Yamlify.Nodes.YamlMappingNode.Add(string! key, string! value) -> void
+Yamlify.Nodes.YamlMappingNode.Add(string! key, Yamlify.Nodes.YamlNode! value) -> void
+Yamlify.Nodes.YamlMappingNode.Add(Yamlify.Nodes.YamlNode! key, Yamlify.Nodes.YamlNode! value) -> void
+Yamlify.Nodes.YamlMappingNode.Clear() -> void
+Yamlify.Nodes.YamlMappingNode.ContainsKey(string! key) -> bool
+Yamlify.Nodes.YamlMappingNode.ContainsKey(Yamlify.Nodes.YamlNode! key) -> bool
+Yamlify.Nodes.YamlMappingNode.Count.get -> int
+Yamlify.Nodes.YamlMappingNode.GetEnumerator() -> System.Collections.Generic.IEnumerator<System.Collections.Generic.KeyValuePair<Yamlify.Nodes.YamlNode!, Yamlify.Nodes.YamlNode!>>!
+Yamlify.Nodes.YamlMappingNode.Keys.get -> System.Collections.Generic.ICollection<Yamlify.Nodes.YamlNode!>!
+Yamlify.Nodes.YamlMappingNode.Remove(Yamlify.Nodes.YamlNode! key) -> bool
+Yamlify.Nodes.YamlMappingNode.Style.get -> Yamlify.CollectionStyle
+Yamlify.Nodes.YamlMappingNode.Style.set -> void
+Yamlify.Nodes.YamlMappingNode.this[string! key].get -> Yamlify.Nodes.YamlNode!
+Yamlify.Nodes.YamlMappingNode.this[string! key].set -> void
+Yamlify.Nodes.YamlMappingNode.this[Yamlify.Nodes.YamlNode! key].get -> Yamlify.Nodes.YamlNode!
+Yamlify.Nodes.YamlMappingNode.this[Yamlify.Nodes.YamlNode! key].set -> void
+Yamlify.Nodes.YamlMappingNode.TryGetValue(string! key, out Yamlify.Nodes.YamlNode! value) -> bool
+Yamlify.Nodes.YamlMappingNode.TryGetValue(Yamlify.Nodes.YamlNode! key, out Yamlify.Nodes.YamlNode! value) -> bool
+Yamlify.Nodes.YamlMappingNode.Values.get -> System.Collections.Generic.ICollection<Yamlify.Nodes.YamlNode!>!
+Yamlify.Nodes.YamlMappingNode.YamlMappingNode() -> void
+Yamlify.Nodes.YamlMappingNode.YamlMappingNode(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<Yamlify.Nodes.YamlNode!, Yamlify.Nodes.YamlNode!>>! children) -> void
+Yamlify.Nodes.YamlNode
+Yamlify.Nodes.YamlNode.Anchor.get -> string?
+Yamlify.Nodes.YamlNode.Anchor.set -> void
+Yamlify.Nodes.YamlNode.End.get -> Yamlify.Mark
+Yamlify.Nodes.YamlNode.Start.get -> Yamlify.Mark
+Yamlify.Nodes.YamlNode.Tag.get -> string?
+Yamlify.Nodes.YamlNode.Tag.set -> void
+Yamlify.Nodes.YamlNode.YamlNode() -> void
+Yamlify.Nodes.YamlNodeType
+Yamlify.Nodes.YamlNodeType.Alias = 3 -> Yamlify.Nodes.YamlNodeType
+Yamlify.Nodes.YamlNodeType.Mapping = 2 -> Yamlify.Nodes.YamlNodeType
+Yamlify.Nodes.YamlNodeType.Scalar = 0 -> Yamlify.Nodes.YamlNodeType
+Yamlify.Nodes.YamlNodeType.Sequence = 1 -> Yamlify.Nodes.YamlNodeType
+Yamlify.Nodes.YamlScalarNode
+Yamlify.Nodes.YamlScalarNode.GetBoolean() -> bool
+Yamlify.Nodes.YamlScalarNode.GetDouble() -> double
+Yamlify.Nodes.YamlScalarNode.GetInt32() -> int
+Yamlify.Nodes.YamlScalarNode.GetInt64() -> long
+Yamlify.Nodes.YamlScalarNode.IsNull.get -> bool
+Yamlify.Nodes.YamlScalarNode.Style.get -> Yamlify.ScalarStyle
+Yamlify.Nodes.YamlScalarNode.Style.set -> void
+Yamlify.Nodes.YamlScalarNode.Value.get -> string?
+Yamlify.Nodes.YamlScalarNode.Value.set -> void
+Yamlify.Nodes.YamlScalarNode.YamlScalarNode() -> void
+Yamlify.Nodes.YamlScalarNode.YamlScalarNode(string? value) -> void
+Yamlify.Nodes.YamlSequenceNode
+Yamlify.Nodes.YamlSequenceNode.Add(Yamlify.Nodes.YamlNode! item) -> void
+Yamlify.Nodes.YamlSequenceNode.Clear() -> void
+Yamlify.Nodes.YamlSequenceNode.Contains(Yamlify.Nodes.YamlNode! item) -> bool
+Yamlify.Nodes.YamlSequenceNode.Count.get -> int
+Yamlify.Nodes.YamlSequenceNode.GetEnumerator() -> System.Collections.Generic.IEnumerator<Yamlify.Nodes.YamlNode!>!
+Yamlify.Nodes.YamlSequenceNode.IndexOf(Yamlify.Nodes.YamlNode! item) -> int
+Yamlify.Nodes.YamlSequenceNode.Insert(int index, Yamlify.Nodes.YamlNode! item) -> void
+Yamlify.Nodes.YamlSequenceNode.Remove(Yamlify.Nodes.YamlNode! item) -> bool
+Yamlify.Nodes.YamlSequenceNode.RemoveAt(int index) -> void
+Yamlify.Nodes.YamlSequenceNode.Style.get -> Yamlify.CollectionStyle
+Yamlify.Nodes.YamlSequenceNode.Style.set -> void
+Yamlify.Nodes.YamlSequenceNode.this[int index].get -> Yamlify.Nodes.YamlNode!
+Yamlify.Nodes.YamlSequenceNode.this[int index].set -> void
+Yamlify.Nodes.YamlSequenceNode.YamlSequenceNode() -> void
+Yamlify.Nodes.YamlSequenceNode.YamlSequenceNode(params Yamlify.Nodes.YamlNode![]! children) -> void
+Yamlify.Nodes.YamlSequenceNode.YamlSequenceNode(System.Collections.Generic.IEnumerable<Yamlify.Nodes.YamlNode!>! children) -> void
+Yamlify.Nodes.YamlStream
+Yamlify.Nodes.YamlStream.Add(Yamlify.Nodes.YamlDocument! item) -> void
+Yamlify.Nodes.YamlStream.Clear() -> void
+Yamlify.Nodes.YamlStream.Contains(Yamlify.Nodes.YamlDocument! item) -> bool
+Yamlify.Nodes.YamlStream.Count.get -> int
+Yamlify.Nodes.YamlStream.GetEnumerator() -> System.Collections.Generic.IEnumerator<Yamlify.Nodes.YamlDocument!>!
+Yamlify.Nodes.YamlStream.IndexOf(Yamlify.Nodes.YamlDocument! item) -> int
+Yamlify.Nodes.YamlStream.Insert(int index, Yamlify.Nodes.YamlDocument! item) -> void
+Yamlify.Nodes.YamlStream.Remove(Yamlify.Nodes.YamlDocument! item) -> bool
+Yamlify.Nodes.YamlStream.RemoveAt(int index) -> void
+Yamlify.Nodes.YamlStream.Save() -> string!
+Yamlify.Nodes.YamlStream.Save(System.IO.Stream! output) -> void
+Yamlify.Nodes.YamlStream.SaveToFile(string! path) -> void
+Yamlify.Nodes.YamlStream.this[int index].get -> Yamlify.Nodes.YamlDocument!
+Yamlify.Nodes.YamlStream.this[int index].set -> void
+Yamlify.Nodes.YamlStream.YamlStream() -> void
+Yamlify.Nodes.YamlStream.YamlStream(params Yamlify.Nodes.YamlDocument![]! documents) -> void
+Yamlify.Nodes.YamlStream.YamlStream(System.Collections.Generic.IEnumerable<Yamlify.Nodes.YamlDocument!>! documents) -> void
 Yamlify.Schema.CoreSchema
 Yamlify.Schema.CoreSchema.GetCanonicalValue(string! value, string! tag) -> string!
 Yamlify.Schema.CoreSchema.Name.get -> string!
-Yamlify.Schema.CoreSchema.ResolveNonPlainScalarTag(System.ReadOnlySpan<char> value, Yamlify.Core.ScalarStyle style) -> string!
+Yamlify.Schema.CoreSchema.ResolveNonPlainScalarTag(System.ReadOnlySpan<char> value, Yamlify.ScalarStyle style) -> string!
 Yamlify.Schema.CoreSchema.ResolveScalarTag(System.ReadOnlySpan<char> value) -> string?
 Yamlify.Schema.CoreSchema.ValidateValue(string! value, string! tag) -> bool
 Yamlify.Schema.FailsafeSchema
 Yamlify.Schema.FailsafeSchema.GetCanonicalValue(string! value, string! tag) -> string!
 Yamlify.Schema.FailsafeSchema.Name.get -> string!
-Yamlify.Schema.FailsafeSchema.ResolveNonPlainScalarTag(System.ReadOnlySpan<char> value, Yamlify.Core.ScalarStyle style) -> string!
+Yamlify.Schema.FailsafeSchema.ResolveNonPlainScalarTag(System.ReadOnlySpan<char> value, Yamlify.ScalarStyle style) -> string!
 Yamlify.Schema.FailsafeSchema.ResolveScalarTag(System.ReadOnlySpan<char> value) -> string?
 Yamlify.Schema.FailsafeSchema.ValidateValue(string! value, string! tag) -> bool
 Yamlify.Schema.IYamlSchema
 Yamlify.Schema.IYamlSchema.GetCanonicalValue(string! value, string! tag) -> string!
 Yamlify.Schema.IYamlSchema.Name.get -> string!
-Yamlify.Schema.IYamlSchema.ResolveNonPlainScalarTag(System.ReadOnlySpan<char> value, Yamlify.Core.ScalarStyle style) -> string!
+Yamlify.Schema.IYamlSchema.ResolveNonPlainScalarTag(System.ReadOnlySpan<char> value, Yamlify.ScalarStyle style) -> string!
 Yamlify.Schema.IYamlSchema.ResolveScalarTag(System.ReadOnlySpan<char> value) -> string?
 Yamlify.Schema.IYamlSchema.ValidateValue(string! value, string! tag) -> bool
 Yamlify.Schema.JsonSchema
 Yamlify.Schema.JsonSchema.GetCanonicalValue(string! value, string! tag) -> string!
 Yamlify.Schema.JsonSchema.Name.get -> string!
-Yamlify.Schema.JsonSchema.ResolveNonPlainScalarTag(System.ReadOnlySpan<char> value, Yamlify.Core.ScalarStyle style) -> string!
+Yamlify.Schema.JsonSchema.ResolveNonPlainScalarTag(System.ReadOnlySpan<char> value, Yamlify.ScalarStyle style) -> string!
 Yamlify.Schema.JsonSchema.ResolveScalarTag(System.ReadOnlySpan<char> value) -> string?
 Yamlify.Schema.JsonSchema.ValidateValue(string! value, string! tag) -> bool
 Yamlify.Schema.YamlTags
@@ -511,7 +511,7 @@ Yamlify.Serialization.YamlSerializerOptions
 Yamlify.Serialization.YamlSerializerOptions.AllowTrailingCommas.get -> bool
 Yamlify.Serialization.YamlSerializerOptions.AllowTrailingCommas.set -> void
 Yamlify.Serialization.YamlSerializerOptions.Converters.get -> System.Collections.Generic.IList<Yamlify.Serialization.YamlConverter!>!
-Yamlify.Serialization.YamlSerializerOptions.DefaultScalarStyle.get -> Yamlify.Core.ScalarStyle
+Yamlify.Serialization.YamlSerializerOptions.DefaultScalarStyle.get -> Yamlify.ScalarStyle
 Yamlify.Serialization.YamlSerializerOptions.DefaultScalarStyle.set -> void
 Yamlify.Serialization.YamlSerializerOptions.EmptyCollectionHandling.get -> Yamlify.Serialization.EmptyCollectionHandling
 Yamlify.Serialization.YamlSerializerOptions.EmptyCollectionHandling.set -> void
@@ -556,7 +556,7 @@ Yamlify.Serialization.YamlSourceGenerationMode.Default = 0 -> Yamlify.Serializat
 Yamlify.Serialization.YamlSourceGenerationMode.Metadata = 1 -> Yamlify.Serialization.YamlSourceGenerationMode
 Yamlify.Serialization.YamlSourceGenerationMode.Serialization = 2 -> Yamlify.Serialization.YamlSourceGenerationMode
 Yamlify.Serialization.YamlSourceGenerationOptionsAttribute
-Yamlify.Serialization.YamlSourceGenerationOptionsAttribute.DefaultScalarStyle.get -> Yamlify.Core.ScalarStyle
+Yamlify.Serialization.YamlSourceGenerationOptionsAttribute.DefaultScalarStyle.get -> Yamlify.ScalarStyle
 Yamlify.Serialization.YamlSourceGenerationOptionsAttribute.DefaultScalarStyle.set -> void
 Yamlify.Serialization.YamlSourceGenerationOptionsAttribute.DiscriminatorPosition.get -> Yamlify.Serialization.DiscriminatorPosition
 Yamlify.Serialization.YamlSourceGenerationOptionsAttribute.DiscriminatorPosition.set -> void

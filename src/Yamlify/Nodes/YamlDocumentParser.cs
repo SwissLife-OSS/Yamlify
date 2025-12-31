@@ -1,4 +1,4 @@
-namespace Yamlify.RepresentationModel;
+namespace Yamlify.Nodes;
 
 /// <summary>
 /// Parser for building YamlDocument instances from YAML input.
@@ -9,15 +9,15 @@ internal sealed class YamlDocumentParser
 
     public IEnumerable<YamlDocument> ParseDocuments(ReadOnlySpan<byte> utf8Yaml)
     {
-        var reader = new Core.Utf8YamlReader(utf8Yaml);
+        var reader = new Utf8YamlReader(utf8Yaml);
         var documents = new List<YamlDocument>();
         
         while (reader.Read())
         {
-            if (reader.TokenType == Core.YamlTokenType.DocumentStart ||
-                reader.TokenType == Core.YamlTokenType.Scalar ||
-                reader.TokenType == Core.YamlTokenType.MappingStart ||
-                reader.TokenType == Core.YamlTokenType.SequenceStart)
+            if (reader.TokenType == YamlTokenType.DocumentStart ||
+                reader.TokenType == YamlTokenType.Scalar ||
+                reader.TokenType == YamlTokenType.MappingStart ||
+                reader.TokenType == YamlTokenType.SequenceStart)
             {
                 var doc = ParseDocument(ref reader);
                 documents.Add(doc);
@@ -28,7 +28,7 @@ internal sealed class YamlDocumentParser
         if (documents.Count == 0)
         {
             // Reset and try to parse as implicit document
-            reader = new Core.Utf8YamlReader(utf8Yaml);
+            reader = new Utf8YamlReader(utf8Yaml);
             if (reader.Read())
             {
                 var doc = ParseDocument(ref reader);
@@ -39,12 +39,12 @@ internal sealed class YamlDocumentParser
         return documents;
     }
 
-    private YamlDocument ParseDocument(ref Core.Utf8YamlReader reader)
+    private YamlDocument ParseDocument(ref Utf8YamlReader reader)
     {
         var document = new YamlDocument();
         _anchors.Clear();
         
-        if (reader.TokenType == Core.YamlTokenType.DocumentStart)
+        if (reader.TokenType == YamlTokenType.DocumentStart)
         {
             document.HasExplicitStart = true;
             if (!reader.Read())
@@ -55,7 +55,7 @@ internal sealed class YamlDocumentParser
         
         document.RootNode = ParseNode(ref reader);
         
-        if (reader.TokenType == Core.YamlTokenType.DocumentEnd)
+        if (reader.TokenType == YamlTokenType.DocumentEnd)
         {
             document.HasExplicitEnd = true;
         }
@@ -63,20 +63,20 @@ internal sealed class YamlDocumentParser
         return document;
     }
 
-    private YamlNode ParseNode(ref Core.Utf8YamlReader reader)
+    private YamlNode ParseNode(ref Utf8YamlReader reader)
     {
         string? anchor = null;
         string? tag = null;
         
         // Handle anchor and tag
-        while (reader.TokenType == Core.YamlTokenType.Anchor || 
-               reader.TokenType == Core.YamlTokenType.Tag)
+        while (reader.TokenType == YamlTokenType.Anchor || 
+               reader.TokenType == YamlTokenType.Tag)
         {
-            if (reader.TokenType == Core.YamlTokenType.Anchor)
+            if (reader.TokenType == YamlTokenType.Anchor)
             {
                 anchor = reader.GetString();
             }
-            else if (reader.TokenType == Core.YamlTokenType.Tag)
+            else if (reader.TokenType == YamlTokenType.Tag)
             {
                 tag = reader.GetString();
             }
@@ -89,10 +89,10 @@ internal sealed class YamlDocumentParser
         
         YamlNode node = reader.TokenType switch
         {
-            Core.YamlTokenType.Scalar => ParseScalar(ref reader),
-            Core.YamlTokenType.MappingStart => ParseMapping(ref reader),
-            Core.YamlTokenType.SequenceStart => ParseSequence(ref reader),
-            Core.YamlTokenType.Alias => ParseAlias(ref reader),
+            YamlTokenType.Scalar => ParseScalar(ref reader),
+            YamlTokenType.MappingStart => ParseMapping(ref reader),
+            YamlTokenType.SequenceStart => ParseSequence(ref reader),
+            YamlTokenType.Alias => ParseAlias(ref reader),
             _ => new YamlScalarNode(null)
         };
         
@@ -107,7 +107,7 @@ internal sealed class YamlDocumentParser
         return node;
     }
 
-    private YamlScalarNode ParseScalar(ref Core.Utf8YamlReader reader)
+    private YamlScalarNode ParseScalar(ref Utf8YamlReader reader)
     {
         var node = new YamlScalarNode(reader.GetString())
         {
@@ -119,7 +119,7 @@ internal sealed class YamlDocumentParser
         return node;
     }
 
-    private YamlMappingNode ParseMapping(ref Core.Utf8YamlReader reader)
+    private YamlMappingNode ParseMapping(ref Utf8YamlReader reader)
     {
         var node = new YamlMappingNode
         {
@@ -128,8 +128,8 @@ internal sealed class YamlDocumentParser
         
         reader.Read(); // Move past MappingStart
         
-        while (reader.TokenType != Core.YamlTokenType.MappingEnd &&
-               reader.TokenType != Core.YamlTokenType.None)
+        while (reader.TokenType != YamlTokenType.MappingEnd &&
+               reader.TokenType != YamlTokenType.None)
         {
             var key = ParseNode(ref reader);
             var value = ParseNode(ref reader);
@@ -142,7 +142,7 @@ internal sealed class YamlDocumentParser
         return node;
     }
 
-    private YamlSequenceNode ParseSequence(ref Core.Utf8YamlReader reader)
+    private YamlSequenceNode ParseSequence(ref Utf8YamlReader reader)
     {
         var node = new YamlSequenceNode
         {
@@ -151,8 +151,8 @@ internal sealed class YamlDocumentParser
         
         reader.Read(); // Move past SequenceStart
         
-        while (reader.TokenType != Core.YamlTokenType.SequenceEnd &&
-               reader.TokenType != Core.YamlTokenType.None)
+        while (reader.TokenType != YamlTokenType.SequenceEnd &&
+               reader.TokenType != YamlTokenType.None)
         {
             var item = ParseNode(ref reader);
             node.Add(item);
@@ -164,7 +164,7 @@ internal sealed class YamlDocumentParser
         return node;
     }
 
-    private YamlNode ParseAlias(ref Core.Utf8YamlReader reader)
+    private YamlNode ParseAlias(ref Utf8YamlReader reader)
     {
         var aliasName = reader.GetString() ?? "";
         

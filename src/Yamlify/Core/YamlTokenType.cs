@@ -1,4 +1,4 @@
-namespace Yamlify.Core;
+namespace Yamlify;
 
 /// <summary>
 /// Specifies the type of YAML token encountered by the <see cref="Utf8YamlReader"/>.

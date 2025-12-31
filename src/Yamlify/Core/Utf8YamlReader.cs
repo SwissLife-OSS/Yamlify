@@ -1,6 +1,6 @@
-using Yamlify.Exceptions;
+using Yamlify;
 
-namespace Yamlify.Core;
+namespace Yamlify;
 
 /// <summary>
 /// A high-performance, low-allocation, forward-only reader for UTF-8 encoded YAML text.

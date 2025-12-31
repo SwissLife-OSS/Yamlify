@@ -1,6 +1,6 @@
-using Yamlify.Exceptions;
+using Yamlify;
 
-namespace Yamlify.Core;
+namespace Yamlify;
 
 /// <summary>
 /// Helper methods for character classification and navigation.

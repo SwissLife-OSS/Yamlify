@@ -1,4 +1,4 @@
-namespace Yamlify.Core;
+namespace Yamlify;
 
 /// <summary>
 /// Represents a position within a YAML stream, including line and column information.

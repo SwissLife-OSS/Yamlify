@@ -1,16 +1,16 @@
-namespace Yamlify.RepresentationModel;
+namespace Yamlify.Nodes;
 
 /// <summary>
 /// Emitter for writing YamlDocument instances to YAML output.
 /// </summary>
 internal sealed class YamlDocumentEmitter
 {
-    private readonly Core.Utf8YamlWriter _writer;
+    private readonly Utf8YamlWriter _writer;
     private readonly HashSet<YamlNode> _visitedNodes = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<YamlNode, string> _anchors = new(ReferenceEqualityComparer.Instance);
     private int _anchorCounter;
 
-    public YamlDocumentEmitter(Core.Utf8YamlWriter writer)
+    public YamlDocumentEmitter(Utf8YamlWriter writer)
     {
         _writer = writer;
     }

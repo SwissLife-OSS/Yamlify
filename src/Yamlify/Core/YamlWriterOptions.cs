@@ -1,6 +1,6 @@
 using System.Buffers;
 
-namespace Yamlify.Core;
+namespace Yamlify;
 
 /// <summary>
 /// Provides options for configuring a <see cref="Utf8YamlWriter"/>.

@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Yamlify.RepresentationModel;
+namespace Yamlify.Nodes;
 
 /// <summary>
 /// Base class for all YAML nodes in the representation model.
@@ -28,12 +28,12 @@ public abstract class YamlNode
     /// <summary>
     /// Gets the start position of this node in the source.
     /// </summary>
-    public Core.Mark Start { get; internal set; }
+    public Mark Start { get; internal set; }
 
     /// <summary>
     /// Gets the end position of this node in the source.
     /// </summary>
-    public Core.Mark End { get; internal set; }
+    public Mark End { get; internal set; }
 
     /// <summary>
     /// Accepts a visitor for traversing the node tree.

@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Yamlify.Core;
+namespace Yamlify;
 
 /// <summary>
 /// Represents a raw YAML token in the lookahead buffer.

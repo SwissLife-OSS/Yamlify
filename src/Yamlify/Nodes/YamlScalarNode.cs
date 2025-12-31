@@ -1,4 +1,4 @@
-namespace Yamlify.RepresentationModel;
+namespace Yamlify.Nodes;
 
 /// <summary>
 /// Represents a YAML scalar value (string, number, boolean, null).
@@ -28,7 +28,7 @@ public sealed class YamlScalarNode : YamlNode
     /// <summary>
     /// Gets or sets the style of this scalar.
     /// </summary>
-    public Core.ScalarStyle Style { get; set; }
+    public ScalarStyle Style { get; set; }
 
     /// <inheritdoc/>
     public override YamlNodeType NodeType => YamlNodeType.Scalar;
@@ -39,7 +39,7 @@ public sealed class YamlScalarNode : YamlNode
     public YamlScalarNode()
     {
         Value = null;
-        Style = Core.ScalarStyle.Any;
+        Style = ScalarStyle.Any;
     }
 
     /// <summary>
@@ -49,7 +49,7 @@ public sealed class YamlScalarNode : YamlNode
     public YamlScalarNode(string? value)
     {
         Value = value;
-        Style = Core.ScalarStyle.Any;
+        Style = ScalarStyle.Any;
     }
 
     /// <inheritdoc/>

@@ -1,6 +1,6 @@
-using Yamlify.Exceptions;
+using Yamlify;
 
-namespace Yamlify.Core;
+namespace Yamlify;
 
 /// <summary>
 /// Parsing methods for the Utf8YamlReader.

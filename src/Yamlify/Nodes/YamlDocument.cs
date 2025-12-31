@@ -1,4 +1,4 @@
-namespace Yamlify.RepresentationModel;
+namespace Yamlify.Nodes;
 
 /// <summary>
 /// Represents a YAML document containing a single root node.

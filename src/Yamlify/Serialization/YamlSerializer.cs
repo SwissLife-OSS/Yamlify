@@ -1,6 +1,6 @@
 using System.Buffers;
 using System.Text;
-using Yamlify.Core;
+using Yamlify;
 
 namespace Yamlify.Serialization;
 

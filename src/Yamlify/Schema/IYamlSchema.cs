@@ -31,7 +31,7 @@ public interface IYamlSchema
     /// <param name="value">The scalar value.</param>
     /// <param name="style">The scalar style.</param>
     /// <returns>The resolved tag.</returns>
-    string ResolveNonPlainScalarTag(ReadOnlySpan<char> value, Core.ScalarStyle style);
+    string ResolveNonPlainScalarTag(ReadOnlySpan<char> value, ScalarStyle style);
 
     /// <summary>
     /// Gets the canonical representation of a value for a given tag.

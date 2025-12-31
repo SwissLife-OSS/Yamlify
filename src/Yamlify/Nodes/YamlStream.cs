@@ -1,4 +1,4 @@
-namespace Yamlify.RepresentationModel;
+namespace Yamlify.Nodes;
 
 /// <summary>
 /// Represents a YAML stream containing multiple documents.
@@ -101,7 +101,7 @@ public sealed class YamlStream : IList<YamlDocument>
     /// </summary>
     public void Save(System.IO.Stream output)
     {
-        using var writer = new Core.Utf8YamlWriter(output);
+        using var writer = new Utf8YamlWriter(output);
         var emitter = new YamlDocumentEmitter(writer);
         
         foreach (var doc in _documents)

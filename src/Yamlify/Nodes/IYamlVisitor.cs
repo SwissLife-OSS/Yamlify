@@ -1,4 +1,4 @@
-namespace Yamlify.RepresentationModel;
+namespace Yamlify.Nodes;
 
 /// <summary>
 /// Visitor interface for traversing YAML nodes.

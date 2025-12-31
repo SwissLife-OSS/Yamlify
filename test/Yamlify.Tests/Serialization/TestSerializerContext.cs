@@ -1,4 +1,4 @@
-using Yamlify.Core;
+using Yamlify;
 using Yamlify.Serialization;
 using Yamlify.Serialization.Converters;
 

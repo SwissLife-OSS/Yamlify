@@ -1,4 +1,4 @@
-namespace Yamlify.Exceptions;
+namespace Yamlify;
 
 /// <summary>
 /// The exception that is thrown when a YAML parsing or serialization error occurs.
@@ -8,7 +8,7 @@ public class YamlException : Exception
     /// <summary>
     /// Gets the position in the YAML stream where the error occurred.
     /// </summary>
-    public Core.Mark? Position { get; }
+    public Mark? Position { get; }
 
     /// <summary>
     /// Gets the path to the element where the error occurred.
@@ -36,7 +36,7 @@ public class YamlException : Exception
     /// </summary>
     /// <param name="message">The message that describes the error.</param>
     /// <param name="position">The position in the YAML stream where the error occurred.</param>
-    public YamlException(string message, Core.Mark position) 
+    public YamlException(string message, Mark position) 
         : base(FormatMessage(message, position))
     {
         Position = position;
@@ -49,7 +49,7 @@ public class YamlException : Exception
     /// <param name="message">The message that describes the error.</param>
     /// <param name="position">The position in the YAML stream where the error occurred.</param>
     /// <param name="innerException">The exception that is the cause of the current exception.</param>
-    public YamlException(string message, Core.Mark position, Exception innerException) 
+    public YamlException(string message, Mark position, Exception innerException) 
         : base(FormatMessage(message, position), innerException)
     {
         Position = position;
@@ -91,7 +91,7 @@ public class YamlException : Exception
         Path = path;
     }
 
-    private static string FormatMessage(string message, Core.Mark position) =>
+    private static string FormatMessage(string message, Mark position) =>
         $"{message} Line: {position.Line}, Col: {position.Column}";
 
     private static string FormatMessage(string message, string path) =>

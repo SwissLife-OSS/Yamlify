@@ -1,4 +1,4 @@
-namespace Yamlify.Core;
+namespace Yamlify;
 
 internal enum ContainerType
 {

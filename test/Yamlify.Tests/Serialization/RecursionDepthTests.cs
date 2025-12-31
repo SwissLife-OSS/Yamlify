@@ -1,4 +1,4 @@
-using Yamlify.Exceptions;
+using Yamlify;
 using Yamlify.Serialization;
 
 namespace Yamlify.Tests.Serialization;

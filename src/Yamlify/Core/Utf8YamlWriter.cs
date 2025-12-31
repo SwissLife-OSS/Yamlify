@@ -1,7 +1,7 @@
 using System.Buffers;
 using System.Text;
 
-namespace Yamlify.Core;
+namespace Yamlify;
 
 /// <summary>
 /// A high-performance, forward-only writer for UTF-8 encoded YAML text.

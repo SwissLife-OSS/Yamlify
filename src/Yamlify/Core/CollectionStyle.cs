@@ -1,4 +1,4 @@
-namespace Yamlify.Core;
+namespace Yamlify;
 
 /// <summary>
 /// Specifies the collection style used in YAML presentation.

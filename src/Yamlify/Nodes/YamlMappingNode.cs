@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Yamlify.RepresentationModel;
+namespace Yamlify.Nodes;
 
 /// <summary>
 /// Represents a YAML mapping (object/dictionary).
@@ -12,7 +12,7 @@ public sealed class YamlMappingNode : YamlNode, IDictionary<YamlNode, YamlNode>
     /// <summary>
     /// Gets or sets the style of this mapping.
     /// </summary>
-    public Core.CollectionStyle Style { get; set; }
+    public CollectionStyle Style { get; set; }
 
     /// <inheritdoc/>
     public override YamlNodeType NodeType => YamlNodeType.Mapping;
@@ -36,7 +36,7 @@ public sealed class YamlMappingNode : YamlNode, IDictionary<YamlNode, YamlNode>
     /// </summary>
     public YamlMappingNode()
     {
-        Style = Core.CollectionStyle.Block;
+        Style = CollectionStyle.Block;
     }
 
     /// <summary>
@@ -45,7 +45,7 @@ public sealed class YamlMappingNode : YamlNode, IDictionary<YamlNode, YamlNode>
     public YamlMappingNode(IEnumerable<KeyValuePair<YamlNode, YamlNode>> children)
     {
         _children.AddRange(children);
-        Style = Core.CollectionStyle.Block;
+        Style = CollectionStyle.Block;
     }
 
     /// <summary>

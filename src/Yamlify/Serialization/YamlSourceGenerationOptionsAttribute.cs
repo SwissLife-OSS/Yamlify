@@ -78,7 +78,7 @@ public sealed class YamlSourceGenerationOptionsAttribute : Attribute
     /// <summary>
     /// Gets or sets the default scalar style.
     /// </summary>
-    public Core.ScalarStyle DefaultScalarStyle { get; set; } = Core.ScalarStyle.Any;
+    public ScalarStyle DefaultScalarStyle { get; set; } = ScalarStyle.Any;
 
     /// <summary>
     /// Gets or sets the position of type discriminator properties during serialization.

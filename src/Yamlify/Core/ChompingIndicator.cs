@@ -1,4 +1,4 @@
-namespace Yamlify.Core;
+namespace Yamlify;
 
 /// <summary>
 /// Specifies the chomping behavior for block scalars.

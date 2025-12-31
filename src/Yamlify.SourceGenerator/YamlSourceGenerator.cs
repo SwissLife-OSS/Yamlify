@@ -248,7 +248,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendLine("using System;");
         sb.AppendLine("using System.Collections.Generic;");
-        sb.AppendLine("using Yamlify.Core;");
+        sb.AppendLine("using Yamlify;");
         sb.AppendLine("using Yamlify.Serialization;");
         sb.AppendLine();
 
@@ -3088,7 +3088,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         // Use flow style for empty collections to output [] instead of nothing
         sb.AppendLine($"                if (value.{propName} is System.Collections.ICollection {{ Count: 0 }})");
         sb.AppendLine("                {");
-        sb.AppendLine("                    writer.WriteSequenceStart(Yamlify.Core.CollectionStyle.Flow);");
+        sb.AppendLine("                    writer.WriteSequenceStart(Yamlify.CollectionStyle.Flow);");
         sb.AppendLine("                    writer.WriteSequenceEnd();");
         sb.AppendLine("                }");
         sb.AppendLine("                else");

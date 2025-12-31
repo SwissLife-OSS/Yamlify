@@ -1,4 +1,4 @@
-namespace Yamlify.RepresentationModel;
+namespace Yamlify.Nodes;
 
 /// <summary>
 /// Represents a YAML sequence (array/list).
@@ -10,7 +10,7 @@ public sealed class YamlSequenceNode : YamlNode, IList<YamlNode>
     /// <summary>
     /// Gets or sets the style of this sequence.
     /// </summary>
-    public Core.CollectionStyle Style { get; set; }
+    public CollectionStyle Style { get; set; }
 
     /// <inheritdoc/>
     public override YamlNodeType NodeType => YamlNodeType.Sequence;
@@ -28,7 +28,7 @@ public sealed class YamlSequenceNode : YamlNode, IList<YamlNode>
     /// </summary>
     public YamlSequenceNode()
     {
-        Style = Core.CollectionStyle.Block;
+        Style = CollectionStyle.Block;
     }
 
     /// <summary>
@@ -38,7 +38,7 @@ public sealed class YamlSequenceNode : YamlNode, IList<YamlNode>
     public YamlSequenceNode(IEnumerable<YamlNode> children)
     {
         _children.AddRange(children);
-        Style = Core.CollectionStyle.Block;
+        Style = CollectionStyle.Block;
     }
 
     /// <summary>
@@ -48,7 +48,7 @@ public sealed class YamlSequenceNode : YamlNode, IList<YamlNode>
     public YamlSequenceNode(params YamlNode[] children)
     {
         _children.AddRange(children);
-        Style = Core.CollectionStyle.Block;
+        Style = CollectionStyle.Block;
     }
 
     /// <summary>

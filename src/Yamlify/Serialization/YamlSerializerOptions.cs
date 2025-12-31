@@ -56,7 +56,7 @@ public sealed class YamlSerializerOptions
     private bool _writeComments;
     private bool _preferFlowStyle;
     private bool _indentSequenceItems = true;
-    private Core.ScalarStyle _defaultScalarStyle = Core.ScalarStyle.Any;
+    private ScalarStyle _defaultScalarStyle = ScalarStyle.Any;
     private ReferenceHandler? _referenceHandler;
     private IYamlTypeInfoResolver? _typeInfoResolver;
     private EmptyCollectionHandling _emptyCollectionHandling = EmptyCollectionHandling.Default;
@@ -313,7 +313,7 @@ public sealed class YamlSerializerOptions
     /// <summary>
     /// Gets or sets the default scalar style.
     /// </summary>
-    public Core.ScalarStyle DefaultScalarStyle
+    public ScalarStyle DefaultScalarStyle
     {
         get => _defaultScalarStyle;
         set

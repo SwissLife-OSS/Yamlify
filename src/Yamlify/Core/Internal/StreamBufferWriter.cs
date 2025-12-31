@@ -1,6 +1,6 @@
 using System.Buffers;
 
-namespace Yamlify.Core;
+namespace Yamlify;
 
 /// <summary>
 /// A buffer writer that wraps a stream.

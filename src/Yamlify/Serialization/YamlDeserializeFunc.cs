@@ -1,4 +1,4 @@
-using Yamlify.Core;
+using Yamlify;
 
 namespace Yamlify.Serialization;
 

@@ -1,4 +1,4 @@
-namespace Yamlify.Core;
+namespace Yamlify;
 
 /// <summary>
 /// Encapsulates the state of a <see cref="Utf8YamlReader"/> for resumption across async boundaries.
