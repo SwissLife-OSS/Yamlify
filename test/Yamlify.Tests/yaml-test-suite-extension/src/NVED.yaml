@@ -1,0 +1,30 @@
+---
+- name: Null value at end of document
+  from: '@yamlify'
+  tags: mapping null end-of-input
+  yaml: |
+    root:
+      - name: test
+        value:
+  tree: |
+    +STR
+     +DOC
+      +MAP
+       =VAL :root
+       +SEQ
+        +MAP
+         =VAL :name
+         =VAL :test
+         =VAL :value
+         =VAL :
+        -MAP
+       -SEQ
+      -MAP
+     -DOC
+    -STR
+  json: |
+    {
+      "root": [
+        { "name": "test", "value": null }
+      ]
+    }

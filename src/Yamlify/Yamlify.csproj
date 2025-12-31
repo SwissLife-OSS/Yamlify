@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    
+    <!-- AOT compatibility -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    
+    <!-- Package metadata -->
+    <PackageId>Yamlify</PackageId>
+    <Authors>SwissLife-OSS</Authors>
+    <Description>High-performance YAML parser and serializer for .NET, fully compliant with the YAML specification.</Description>
+    <PackageTags>yaml;parser;serializer;yaml12;high-performance;aot</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/SwissLife-OSS/yamlify</RepositoryUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <PackageProjectUrl>https://github.com/SwissLife-OSS/yamlify</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    
+    <!-- Include source generator in package -->
+    <IncludeBuildOutput>true</IncludeBuildOutput>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!-- Bundle source generator with main package -->
+  <ItemGroup>
+    <ProjectReference Include="..\Yamlify.SourceGenerator\Yamlify.SourceGenerator.csproj" 
+                      PrivateAssets="all"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="$(MSBuildThisFileDirectory)..\Yamlify.SourceGenerator\$(OutDir)Yamlify.SourceGenerator.dll" 
+          Pack="true" 
+          PackagePath="analyzers/dotnet/cs" 
+          Visible="false" />
+  </ItemGroup>
+
+</Project>

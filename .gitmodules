@@ -1,0 +1,3 @@
+[submodule "test/Yamlify.Tests/yaml-test-suite"]
+	path = test/Yamlify.Tests/yaml-test-suite
+	url = https://github.com/yaml/yaml-test-suite.git

@@ -1,0 +1,36 @@
+---
+- name: Null value at end of mapping in sequence
+  from: '@yamlify'
+  tags: sequence mapping null
+  yaml: |
+    items:
+      - name: first
+        value:
+      - name: second
+  tree: |
+    +STR
+     +DOC
+      +MAP
+       =VAL :items
+       +SEQ
+        +MAP
+         =VAL :name
+         =VAL :first
+         =VAL :value
+         =VAL :
+        -MAP
+        +MAP
+         =VAL :name
+         =VAL :second
+        -MAP
+       -SEQ
+      -MAP
+     -DOC
+    -STR
+  json: |
+    {
+      "items": [
+        { "name": "first", "value": null },
+        { "name": "second" }
+      ]
+    }

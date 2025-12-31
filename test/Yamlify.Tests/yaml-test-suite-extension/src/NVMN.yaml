@@ -1,0 +1,48 @@
+---
+- name: Multiple null values in sequence items
+  from: '@yamlify'
+  tags: sequence mapping null multiple
+  yaml: |
+    variables:
+      - name: first
+        data:
+      - name: second
+        data: has-value
+      - name: third
+        data:
+  tree: |
+    +STR
+     +DOC
+      +MAP
+       =VAL :variables
+       +SEQ
+        +MAP
+         =VAL :name
+         =VAL :first
+         =VAL :data
+         =VAL :
+        -MAP
+        +MAP
+         =VAL :name
+         =VAL :second
+         =VAL :data
+         =VAL :has-value
+        -MAP
+        +MAP
+         =VAL :name
+         =VAL :third
+         =VAL :data
+         =VAL :
+        -MAP
+       -SEQ
+      -MAP
+     -DOC
+    -STR
+  json: |
+    {
+      "variables": [
+        { "name": "first", "data": null },
+        { "name": "second", "data": "has-value" },
+        { "name": "third", "data": null }
+      ]
+    }

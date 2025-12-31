@@ -1,0 +1,42 @@
+---
+- name: Null value in multi-level nesting
+  from: '@yamlify'
+  tags: sequence mapping null nested
+  yaml: |
+    outer:
+      inner:
+        - key: value1
+          last:
+        - key: value2
+  tree: |
+    +STR
+     +DOC
+      +MAP
+       =VAL :outer
+       +MAP
+        =VAL :inner
+        +SEQ
+         +MAP
+          =VAL :key
+          =VAL :value1
+          =VAL :last
+          =VAL :
+         -MAP
+         +MAP
+          =VAL :key
+          =VAL :value2
+         -MAP
+        -SEQ
+       -MAP
+      -MAP
+     -DOC
+    -STR
+  json: |
+    {
+      "outer": {
+        "inner": [
+          { "key": "value1", "last": null },
+          { "key": "value2" }
+        ]
+      }
+    }

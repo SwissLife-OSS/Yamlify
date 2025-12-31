@@ -1,0 +1,33 @@
+---
+- name: Null value followed by dedented key
+  from: '@yamlify'
+  tags: mapping null dedent
+  yaml: |
+    metadata:
+      external-ref:
+      require-key:
+    name: test
+  tree: |
+    +STR
+     +DOC
+      +MAP
+       =VAL :metadata
+       +MAP
+        =VAL :external-ref
+        =VAL :
+        =VAL :require-key
+        =VAL :
+       -MAP
+       =VAL :name
+       =VAL :test
+      -MAP
+     -DOC
+    -STR
+  json: |
+    {
+      "metadata": {
+        "external-ref": null,
+        "require-key": null
+      },
+      "name": "test"
+    }
