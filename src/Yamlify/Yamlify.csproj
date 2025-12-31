@@ -13,6 +13,9 @@
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
     
+    <!-- Public API analyzer - detect breaking changes -->
+    <EnablePackageValidation>true</EnablePackageValidation>
+    
     <!-- Package metadata -->
     <PackageId>Yamlify</PackageId>
     <Authors>SwissLife-OSS</Authors>
@@ -33,6 +36,16 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <!-- Public API tracking -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
+  </ItemGroup>
 
   <!-- Bundle source generator with main package -->
   <ItemGroup>
