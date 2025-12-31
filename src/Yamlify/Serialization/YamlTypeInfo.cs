@@ -2,14 +2,6 @@ using Yamlify.Core;
 
 namespace Yamlify.Serialization;
 
-// The following types have been moved to individual files:
-// - YamlSerializeAction.cs
-// - YamlDeserializeFunc.cs
-// - YamlPropertyInfo.cs
-// - YamlPropertyInfoOfT.cs
-// - IYamlTypeInfoResolver.cs
-// - YamlSerializerContext.cs
-
 /// <summary>
 /// Provides metadata about a type for YAML serialization.
 /// </summary>

@@ -1,8 +1,5 @@
 namespace Yamlify.Schema;
 
-// The following types have been moved to individual files:
-// - YamlTags.cs
-
 /// <summary>
 /// Defines a YAML schema for resolving tags and validating content.
 /// </summary>

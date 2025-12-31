@@ -782,10 +782,3 @@ public sealed class Utf8YamlWriter : IDisposable
         }
     }
 }
-
-// Internal types have been moved to individual files:
-// - WriterState.cs
-// - ContainerType.cs
-// - ContainerInfo.cs
-// - StreamBufferWriter.cs
-// - Utf8Formatter.cs

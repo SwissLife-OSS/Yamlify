@@ -45,5 +45,3 @@ public readonly struct YamlReaderOptions
         StrictDuplicateKeys = false;
     }
 }
-
-// YamlReaderState has been moved to YamlReaderState.cs

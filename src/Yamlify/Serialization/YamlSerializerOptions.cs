@@ -2,21 +2,6 @@ using Yamlify.Schema;
 
 namespace Yamlify.Serialization;
 
-// The following types have been moved to individual files:
-// - EmptyCollectionHandling.cs
-// - YamlSerializerDefaults.cs
-// - ReferenceHandler.cs
-// - ReferenceResolver.cs
-// - IgnoreCyclesReferenceHandler.cs
-// - IgnoreCyclesResolver.cs
-// - PreserveReferenceHandler.cs
-// - PreserveResolver.cs
-// - YamlNamingPolicy.cs
-// - CamelCaseNamingPolicy.cs
-// - SnakeCaseNamingPolicy.cs
-// - KebabCaseNamingPolicy.cs
-// - ReferenceResolverScope.cs
-
 /// <summary>
 /// Provides options to be used with <see cref="YamlSerializer"/>.
 /// </summary>

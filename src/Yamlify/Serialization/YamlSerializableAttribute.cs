@@ -1,12 +1,5 @@
 namespace Yamlify.Serialization;
 
-// The following types have been moved to individual files:
-// - YamlSourceGenerationMode.cs
-// - YamlSourceGenerationOptionsAttribute.cs
-// - YamlKnownNamingPolicy.cs
-// - DiscriminatorPosition.cs
-// - YamlPropertyOrdering.cs
-
 /// <summary>
 /// Instructs the source generator to generate serialization metadata for the specified type.
 /// </summary>

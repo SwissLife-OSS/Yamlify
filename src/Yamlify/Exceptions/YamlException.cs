@@ -1,9 +1,5 @@
 namespace Yamlify.Exceptions;
 
-// The following types have been moved to individual files:
-// - YamlSyntaxException.cs
-// - YamlSemanticException.cs
-
 /// <summary>
 /// The exception that is thrown when a YAML parsing or serialization error occurs.
 /// </summary>

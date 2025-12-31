@@ -1,11 +1,5 @@
 namespace Yamlify.RepresentationModel;
 
-// The following types have been moved to individual files:
-// - TagDirective.cs
-// - YamlStream.cs
-// - YamlDocumentParser.cs
-// - YamlDocumentEmitter.cs
-
 /// <summary>
 /// Represents a YAML document containing a single root node.
 /// </summary>

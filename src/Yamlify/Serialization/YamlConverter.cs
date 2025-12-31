@@ -3,19 +3,6 @@ using Yamlify.Schema;
 
 namespace Yamlify.Serialization;
 
-// The following types have been moved to individual files:
-// - YamlConverterAttribute.cs
-// - YamlPropertyNameAttribute.cs
-// - YamlIgnoreAttribute.cs
-// - YamlIgnoreCondition.cs
-// - YamlRequiredAttribute.cs
-// - YamlPropertyOrderAttribute.cs
-// - YamlConstructorAttribute.cs
-// - YamlDerivedTypeAttribute.cs
-// - YamlPolymorphicAttribute.cs
-// - YamlSiblingDiscriminatorAttribute.cs
-// - YamlDiscriminatorMappingAttribute.cs
-
 /// <summary>
 /// Base class for converting objects to and from YAML.
 /// </summary>

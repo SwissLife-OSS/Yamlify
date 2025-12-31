@@ -2,14 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Yamlify.RepresentationModel;
 
-// The following types have been moved to individual files:
-// - YamlNodeType.cs
-// - YamlScalarNode.cs
-// - YamlSequenceNode.cs
-// - YamlMappingNode.cs
-// - YamlAliasNode.cs
-// - IYamlVisitor.cs
-
 /// <summary>
 /// Base class for all YAML nodes in the representation model.
 /// </summary>
