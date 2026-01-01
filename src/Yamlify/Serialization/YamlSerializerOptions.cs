@@ -116,7 +116,7 @@ public sealed class YamlSerializerOptions
     /// <para>
     /// This property provides protection against stack overflow or memory exhaustion when 
     /// processing deeply nested or circular YAML structures. When the depth limit is exceeded,
-    /// a <see cref="Exceptions.MaxRecursionDepthExceededException"/> is thrown.
+    /// a <see cref="MaxRecursionDepthExceededException"/> is thrown.
     /// </para>
     /// <para>
     /// The default value is 64. The maximum allowed value is 1000.
