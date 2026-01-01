@@ -3,48 +3,6 @@ using Yamlify.Schema;
 namespace Yamlify.Serialization;
 
 /// <summary>
-/// Specifies how empty collections (arrays, lists) should be handled during serialization and deserialization.
-/// </summary>
-public enum EmptyCollectionHandling
-{
-    /// <summary>
-    /// Empty collections are serialized as empty flow-style sequences ([]).
-    /// Null values for collection types are deserialized as null.
-    /// </summary>
-    Default = 0,
-
-    /// <summary>
-    /// Empty collections are serialized as empty flow-style sequences ([]).
-    /// Null values for collection types are deserialized as empty collections.
-    /// This is useful when you always want arrays instead of null values.
-    /// </summary>
-    /// <remarks>
-    /// Per YAML spec, an empty value (key: ) represents null.
-    /// With this option, when deserializing into array/list types, null becomes an empty collection.
-    /// </remarks>
-    PreferEmptyCollection = 1
-}
-
-/// <summary>
-/// Default values for <see cref="YamlSerializerOptions"/>.
-/// </summary>
-internal static class YamlSerializerDefaults
-{
-    /// <summary>
-    /// Default maximum recursion depth for serialization and deserialization.
-    /// </summary>
-    /// <remarks>
-    /// This value (64) provides protection against stack overflow from deeply nested or circular structures.
-    /// </remarks>
-    internal const int DefaultMaxDepth = 64;
-
-    /// <summary>
-    /// Maximum allowed value for MaxDepth to prevent unreasonable memory allocation.
-    /// </summary>
-    internal const int MaxAllowedDepth = 1_000;
-}
-
-/// <summary>
 /// Provides options to be used with <see cref="YamlSerializer"/>.
 /// </summary>
 public sealed class YamlSerializerOptions
@@ -94,11 +52,11 @@ public sealed class YamlSerializerOptions
     private bool _ignoreReadOnlyProperties;
     private bool _includeFields;
     private bool _allowTrailingCommas;
-    private bool _readCommentHandling;
+    private bool _readComments;
     private bool _writeComments;
     private bool _preferFlowStyle;
     private bool _indentSequenceItems = true;
-    private Core.ScalarStyle _defaultScalarStyle = Core.ScalarStyle.Any;
+    private ScalarStyle _defaultScalarStyle = ScalarStyle.Any;
     private ReferenceHandler? _referenceHandler;
     private IYamlTypeInfoResolver? _typeInfoResolver;
     private EmptyCollectionHandling _emptyCollectionHandling = EmptyCollectionHandling.Default;
@@ -158,7 +116,7 @@ public sealed class YamlSerializerOptions
     /// <para>
     /// This property provides protection against stack overflow or memory exhaustion when 
     /// processing deeply nested or circular YAML structures. When the depth limit is exceeded,
-    /// a <see cref="Exceptions.MaximumRecursionDepthExceededException"/> is thrown.
+    /// a <see cref="MaxRecursionDepthExceededException"/> is thrown.
     /// </para>
     /// <para>
     /// The default value is 64. The maximum allowed value is 1000.
@@ -293,13 +251,13 @@ public sealed class YamlSerializerOptions
     /// <summary>
     /// Gets or sets whether comments should be read.
     /// </summary>
-    public bool ReadCommentHandling
+    public bool ReadComments
     {
-        get => _readCommentHandling;
+        get => _readComments;
         set
         {
             ThrowIfReadOnly();
-            _readCommentHandling = value;
+            _readComments = value;
         }
     }
 
@@ -355,7 +313,7 @@ public sealed class YamlSerializerOptions
     /// <summary>
     /// Gets or sets the default scalar style.
     /// </summary>
-    public Core.ScalarStyle DefaultScalarStyle
+    public ScalarStyle DefaultScalarStyle
     {
         get => _defaultScalarStyle;
         set
@@ -474,22 +432,6 @@ public sealed class YamlSerializerOptions
     }
 
     /// <summary>
-    /// Checks if an object has already been serialized (cycle detection).
-    /// </summary>
-    /// <param name="value">The object to check.</param>
-    /// <returns>True if the object was already serialized (is a cycle), false otherwise.</returns>
-    public static bool IsAlreadySerialized(object value)
-    {
-        if (_currentResolver is null)
-        {
-            return false;
-        }
-        
-        _currentResolver.GetReference(value, out var alreadyExists);
-        return alreadyExists;
-    }
-
-    /// <summary>
     /// Clears the current reference resolver. Called when serialization scope ends.
     /// </summary>
     internal static void ClearCurrentResolver()
@@ -523,7 +465,7 @@ public sealed class YamlSerializerOptions
         _ignoreReadOnlyProperties = options._ignoreReadOnlyProperties;
         _includeFields = options._includeFields;
         _allowTrailingCommas = options._allowTrailingCommas;
-        _readCommentHandling = options._readCommentHandling;
+        _readComments = options._readComments;
         _writeComments = options._writeComments;
         _preferFlowStyle = options._preferFlowStyle;
         _indentSequenceItems = options._indentSequenceItems;
@@ -572,239 +514,5 @@ public sealed class YamlSerializerOptions
         {
             throw new InvalidOperationException("YamlSerializerOptions instance is read-only.");
         }
-    }
-}
-
-/// <summary>
-/// Defines how object references are handled during serialization.
-/// </summary>
-public abstract class ReferenceHandler
-{
-    /// <summary>
-    /// Gets a reference handler that ignores circular references.
-    /// </summary>
-    public static ReferenceHandler IgnoreCycles { get; } = new IgnoreCyclesReferenceHandler();
-
-    /// <summary>
-    /// Gets a reference handler that preserves references using YAML anchors.
-    /// </summary>
-    public static ReferenceHandler Preserve { get; } = new PreserveReferenceHandler();
-
-    /// <summary>
-    /// Creates a resolver for tracking references.
-    /// </summary>
-    public abstract ReferenceResolver CreateResolver();
-}
-
-/// <summary>
-/// Resolves and tracks object references during serialization.
-/// </summary>
-public abstract class ReferenceResolver
-{
-    /// <summary>
-    /// Adds a reference to the resolver.
-    /// </summary>
-    /// <param name="referenceId">The reference identifier (anchor name).</param>
-    /// <param name="value">The referenced object.</param>
-    public abstract void AddReference(string referenceId, object value);
-
-    /// <summary>
-    /// Gets the reference identifier for an object if it exists.
-    /// </summary>
-    /// <param name="value">The object to get the reference for.</param>
-    /// <param name="alreadyExists">Whether the reference already exists.</param>
-    /// <returns>The reference identifier.</returns>
-    public abstract string GetReference(object value, out bool alreadyExists);
-
-    /// <summary>
-    /// Resolves a reference by its identifier.
-    /// </summary>
-    /// <param name="referenceId">The reference identifier.</param>
-    /// <returns>The referenced object.</returns>
-    public abstract object ResolveReference(string referenceId);
-}
-
-internal sealed class IgnoreCyclesReferenceHandler : ReferenceHandler
-{
-    public override ReferenceResolver CreateResolver() => new IgnoreCyclesResolver();
-}
-
-internal sealed class IgnoreCyclesResolver : ReferenceResolver
-{
-    private readonly HashSet<object> _visited = new(ReferenceEqualityComparer.Instance);
-
-    public override void AddReference(string referenceId, object value) { }
-
-    public override string GetReference(object value, out bool alreadyExists)
-    {
-        alreadyExists = !_visited.Add(value);
-        return string.Empty;
-    }
-
-    public override object ResolveReference(string referenceId) => 
-        throw new InvalidOperationException("IgnoreCycles does not support resolving references.");
-}
-
-internal sealed class PreserveReferenceHandler : ReferenceHandler
-{
-    public override ReferenceResolver CreateResolver() => new PreserveResolver();
-}
-
-internal sealed class PreserveResolver : ReferenceResolver
-{
-    private readonly Dictionary<string, object> _idToObject = new();
-    private readonly Dictionary<object, string> _objectToId = new(ReferenceEqualityComparer.Instance);
-    private int _nextId = 1;
-
-    public override void AddReference(string referenceId, object value)
-    {
-        _idToObject[referenceId] = value;
-        _objectToId[value] = referenceId;
-    }
-
-    public override string GetReference(object value, out bool alreadyExists)
-    {
-        if (_objectToId.TryGetValue(value, out var existing))
-        {
-            alreadyExists = true;
-            return existing;
-        }
-
-        alreadyExists = false;
-        var id = $"ref{_nextId++}";
-        _objectToId[value] = id;
-        _idToObject[id] = value;
-        return id;
-    }
-
-    public override object ResolveReference(string referenceId)
-    {
-        if (_idToObject.TryGetValue(referenceId, out var value))
-        {
-            return value;
-        }
-        throw new InvalidOperationException($"Reference '{referenceId}' not found.");
-    }
-}
-
-/// <summary>
-/// Determines the policy for converting property names.
-/// </summary>
-public abstract class YamlNamingPolicy
-{
-    /// <summary>
-    /// Gets a naming policy that converts names to camelCase.
-    /// </summary>
-    public static YamlNamingPolicy CamelCase { get; } = new CamelCaseNamingPolicy();
-
-    /// <summary>
-    /// Gets a naming policy that converts names to snake_case.
-    /// </summary>
-    public static YamlNamingPolicy SnakeCase { get; } = new SnakeCaseNamingPolicy();
-
-    /// <summary>
-    /// Gets a naming policy that converts names to kebab-case.
-    /// </summary>
-    public static YamlNamingPolicy KebabCase { get; } = new KebabCaseNamingPolicy();
-
-    /// <summary>
-    /// Converts a name.
-    /// </summary>
-    /// <param name="name">The name to convert.</param>
-    /// <returns>The converted name.</returns>
-    public abstract string ConvertName(string name);
-}
-
-internal sealed class CamelCaseNamingPolicy : YamlNamingPolicy
-{
-    public override string ConvertName(string name)
-    {
-        if (string.IsNullOrEmpty(name)) return name;
-        if (!char.IsUpper(name[0])) return name;
-
-        var chars = name.ToCharArray();
-        for (int i = 0; i < chars.Length; i++)
-        {
-            if (!char.IsUpper(chars[i]))
-            {
-                break;
-            }
-            
-            // If next char is lowercase, this is the start of a word - keep it uppercase (unless it's position 0)
-            if (i > 0 && i + 1 < chars.Length && char.IsLower(chars[i + 1]))
-            {
-                break;
-            }
-            
-            chars[i] = char.ToLowerInvariant(chars[i]);
-        }
-
-        return new string(chars);
-    }
-}
-
-internal sealed class SnakeCaseNamingPolicy : YamlNamingPolicy
-{
-    public override string ConvertName(string name)
-    {
-        if (string.IsNullOrEmpty(name)) return name;
-
-        var result = new System.Text.StringBuilder();
-        for (int i = 0; i < name.Length; i++)
-        {
-            char c = name[i];
-            if (char.IsUpper(c))
-            {
-                if (i > 0) result.Append('_');
-                result.Append(char.ToLowerInvariant(c));
-            }
-            else
-            {
-                result.Append(c);
-            }
-        }
-
-        return result.ToString();
-    }
-}
-
-internal sealed class KebabCaseNamingPolicy : YamlNamingPolicy
-{
-    public override string ConvertName(string name)
-    {
-        if (string.IsNullOrEmpty(name)) return name;
-
-        var result = new System.Text.StringBuilder();
-        for (int i = 0; i < name.Length; i++)
-        {
-            char c = name[i];
-            if (char.IsUpper(c))
-            {
-                if (i > 0) result.Append('-');
-                result.Append(char.ToLowerInvariant(c));
-            }
-            else
-            {
-                result.Append(c);
-            }
-        }
-
-        return result.ToString();
-    }
-}
-
-/// <summary>
-/// A disposable scope for managing reference resolver lifetime during serialization.
-/// </summary>
-internal readonly struct ReferenceResolverScope : IDisposable
-{
-    public ReferenceResolverScope(ReferenceResolver? resolver)
-    {
-        // Resolver is already set by BeginSerialize
-    }
-
-    public void Dispose()
-    {
-        YamlSerializerOptions.ClearCurrentResolver();
     }
 }

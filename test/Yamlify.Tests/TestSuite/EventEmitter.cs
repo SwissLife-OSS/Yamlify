@@ -1,5 +1,5 @@
 using System.Text;
-using Yamlify.Core;
+using Yamlify;
 
 namespace Yamlify.Tests.TestSuite;
 

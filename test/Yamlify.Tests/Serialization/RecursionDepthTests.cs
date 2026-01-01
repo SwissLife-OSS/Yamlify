@@ -1,4 +1,4 @@
-using Yamlify.Exceptions;
+using Yamlify;
 using Yamlify.Serialization;
 
 namespace Yamlify.Tests.Serialization;
@@ -198,9 +198,9 @@ public class RecursionDepthTests
     #region Exception Details Tests
 
     [Fact]
-    public void MaximumRecursionDepthExceededException_ContainsHelpfulMessage()
+    public void MaxRecursionDepthExceededException_ContainsHelpfulMessage()
     {
-        var ex = new MaximumRecursionDepthExceededException(64, 65);
+        var ex = new MaxRecursionDepthExceededException(64, 65);
         
         Assert.Contains("64", ex.Message);
         Assert.Contains("65", ex.Message);
@@ -208,18 +208,18 @@ public class RecursionDepthTests
     }
 
     [Fact]
-    public void MaximumRecursionDepthExceededException_StoresDepthValues()
+    public void MaxRecursionDepthExceededException_StoresDepthValues()
     {
-        var ex = new MaximumRecursionDepthExceededException(64, 65);
+        var ex = new MaxRecursionDepthExceededException(64, 65);
         
         Assert.Equal(64, ex.MaxDepth);
         Assert.Equal(65, ex.CurrentDepth);
     }
 
     [Fact]
-    public void MaximumRecursionDepthExceededException_IsYamlException()
+    public void MaxRecursionDepthExceededException_IsYamlException()
     {
-        var ex = new MaximumRecursionDepthExceededException(64, 65);
+        var ex = new MaxRecursionDepthExceededException(64, 65);
         Assert.IsAssignableFrom<YamlException>(ex);
     }
 

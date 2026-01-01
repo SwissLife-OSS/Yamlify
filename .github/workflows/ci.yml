@@ -32,6 +32,10 @@ jobs:
         shell: bash
         run: dotnet build ./all.csproj -f net${{ matrix.dotnet-version }}.0
 
+      - name: Check for breaking API changes
+        shell: bash
+        run: dotnet build src/Yamlify/Yamlify.csproj --no-restore -warnaserror:RS0016,RS0017
+
       - name: Run tests
         shell: bash
         run: dotnet test ./all.csproj /p:BuildTestsOnly=true --no-build -f net${{ matrix.dotnet-version }}.0 -- RunConfiguration.MaxCpuCount=1

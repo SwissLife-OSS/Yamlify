@@ -1,6 +1,5 @@
 using System.Buffers;
 using System.Text;
-using Yamlify.Core;
 
 namespace Yamlify.Serialization;
 
@@ -603,7 +602,7 @@ public static class YamlSerializer
             IndentSize = options.IndentSize,
             PreferFlowStyle = options.PreferFlowStyle,
             DefaultScalarStyle = options.DefaultScalarStyle,
-            SkipNullValues = options.IgnoreNullValues,
+            IgnoreNullValues = options.IgnoreNullValues,
             IndentSequenceItems = options.IndentSequenceItems
         };
     }

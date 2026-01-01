@@ -84,7 +84,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         var indentSequenceItems = true;
         var ignoreNullValues = false;
         var ignoreEmptyObjects = false;
-        var discriminatorPosition = DiscriminatorPositionMode.Ordered;
+        var discriminatorPosition = DiscriminatorPositionMode.PropertyOrder;
         
         foreach (var attributeData in classSymbol.GetAttributes())
         {
@@ -248,7 +248,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendLine("using System;");
         sb.AppendLine("using System.Collections.Generic;");
-        sb.AppendLine("using Yamlify.Core;");
+        sb.AppendLine("using Yamlify;");
         sb.AppendLine("using Yamlify.Serialization;");
         sb.AppendLine();
 
@@ -369,7 +369,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
 
             sb.AppendLine($"        properties.Add(new YamlPropertyInfo<{fullTypeName}, {propTypeName}>(");
             sb.AppendLine($"            name: \"{propName}\",");
-            sb.AppendLine($"            yamlPropertyName: \"{yamlName}\",");
+            sb.AppendLine($"            serializedName: \"{yamlName}\",");
             
             if (prop.GetMethod is not null)
             {
@@ -1481,11 +1481,11 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         
         // Write discriminator at the beginning if:
         // 1. DiscriminatorPosition.First is configured, OR
-        // 2. DiscriminatorPosition.Ordered is configured but there's no matching property to attach the order to
+        // 2. DiscriminatorPosition.PropertyOrder is configured but there's no matching property to attach the order to
         if (discriminatorPropertyName is not null && discriminatorValue is not null)
         {
             var shouldWriteDiscriminatorFirst = discriminatorPosition == DiscriminatorPositionMode.First 
-                || (discriminatorPosition == DiscriminatorPositionMode.Ordered && !discriminatorHasMatchingProperty);
+                || (discriminatorPosition == DiscriminatorPositionMode.PropertyOrder && !discriminatorHasMatchingProperty);
             
             if (shouldWriteDiscriminatorFirst)
             {
@@ -1552,7 +1552,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             if (isDiscriminatorProperty)
             {
                 // When DiscriminatorPosition.First (or no matching property), discriminator was already written - skip
-                // When DiscriminatorPosition.Ordered AND there IS a matching property, write the discriminator at this position
+                // When DiscriminatorPosition.PropertyOrder AND there IS a matching property, write the discriminator at this position
                 if (discriminatorPosition == DiscriminatorPositionMode.First || !discriminatorHasMatchingProperty)
                 {
                     continue;
@@ -2000,7 +2000,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 sb.AppendLine($"{indent}{{");
                 sb.AppendLine($"{indent2}writer.WriteNull();");
                 sb.AppendLine($"{indent}}}");
-                sb.AppendLine($"{indent}else if (YamlSerializerOptions.IsAlreadySerialized(value.{propName}))");
+                sb.AppendLine($"{indent}else if (YamlSerializerOptions.CurrentResolver?.IsCycleReference(value.{propName}) == true)");
                 sb.AppendLine($"{indent}{{");
                 sb.AppendLine($"{indent2}// Circular reference detected - write null to break the cycle");
                 sb.AppendLine($"{indent2}writer.WriteNull();");
@@ -3088,7 +3088,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         // Use flow style for empty collections to output [] instead of nothing
         sb.AppendLine($"                if (value.{propName} is System.Collections.ICollection {{ Count: 0 }})");
         sb.AppendLine("                {");
-        sb.AppendLine("                    writer.WriteSequenceStart(Yamlify.Core.CollectionStyle.Flow);");
+        sb.AppendLine("                    writer.WriteSequenceStart(Yamlify.CollectionStyle.Flow);");
         sb.AppendLine("                    writer.WriteSequenceEnd();");
         sb.AppendLine("                }");
         sb.AppendLine("                else");
@@ -3203,7 +3203,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 sb.AppendLine($"{indent}{{");
                 sb.AppendLine($"{indent}    writer.WriteNull();");
                 sb.AppendLine($"{indent}}}");
-                sb.AppendLine($"{indent}else if (YamlSerializerOptions.IsAlreadySerialized({varName}))");
+                sb.AppendLine($"{indent}else if (YamlSerializerOptions.CurrentResolver?.IsCycleReference({varName}) == true)");
                 sb.AppendLine($"{indent}{{");
                 sb.AppendLine($"{indent}    // Circular reference detected - write null to break the cycle");
                 sb.AppendLine($"{indent}    writer.WriteNull();");
@@ -3432,7 +3432,7 @@ internal sealed class ContextToGenerate : IEquatable<ContextToGenerate>
         bool indentSequenceItems = true,
         bool ignoreNullValues = false,
         bool ignoreEmptyObjects = false,
-        DiscriminatorPositionMode discriminatorPosition = DiscriminatorPositionMode.Ordered)
+        DiscriminatorPositionMode discriminatorPosition = DiscriminatorPositionMode.PropertyOrder)
     {
         ClassName = className;
         Namespace = ns;
@@ -3487,7 +3487,7 @@ internal enum DiscriminatorPositionMode
     /// <summary>
     /// The discriminator property is written according to its YamlPropertyOrder or declaration order.
     /// </summary>
-    Ordered = 0,
+    PropertyOrder = 0,
 
     /// <summary>
     /// The discriminator property is always written first.
