@@ -1,0 +1,21 @@
+<Project>
+  <PropertyGroup>
+    <!-- Common build settings -->
+    <LangVersion>preview</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
+    
+    <!-- Common package metadata -->
+    <Authors>SwissLife-OSS</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/SwissLife-OSS/Yamlify</RepositoryUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <PackageProjectUrl>https://github.com/SwissLife-OSS/Yamlify</PackageProjectUrl>
+    
+    <!-- Symbol packages for debugging -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+</Project>
