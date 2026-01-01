@@ -1,4 +1,5 @@
 <Project>
+
   <PropertyGroup>
     <!-- Common build settings -->
     <LangVersion>preview</LangVersion>
@@ -6,16 +7,43 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
-    
-    <!-- Common package metadata -->
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>pdbonly</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Package metadata -->
+    <Version Condition="$(Version) == ''">0.0.0</Version>
+    <Product>Yamlify</Product>
     <Authors>SwissLife-OSS</Authors>
+    <Company>Swiss Life</Company>
+    <Copyright>Copyright © $(Company) $([System.DateTime]::Now.Year)</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/SwissLife-OSS/Yamlify</RepositoryUrl>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <PackageProjectUrl>https://github.com/SwissLife-OSS/Yamlify</PackageProjectUrl>
-    
-    <!-- Symbol packages for debugging -->
+    <PackageReleaseNotes>Release notes: https://github.com/SwissLife-OSS/Yamlify/releases/$(Version)</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Source Link and symbols -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <RepositoryUrl>https://github.com/SwissLife-OSS/Yamlify.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
 </Project>
