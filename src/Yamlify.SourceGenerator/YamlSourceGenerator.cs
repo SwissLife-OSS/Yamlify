@@ -1805,17 +1805,22 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         if (siblingInfo is not null && !IsDictionary(propType, out _, out _))
         {
             var discriminatorVarName = $"_{siblingInfo.DiscriminatorPropertyName.ToLowerInvariant()}";
-            sb.AppendLine($"                        {varName} = {discriminatorVarName}.ToString() switch");
+            sb.AppendLine($"                        switch ({discriminatorVarName}.ToString())");
             sb.AppendLine("                        {");
             
             foreach (var (discValue, concreteType) in siblingInfo.Mappings)
             {
                 var concreteConverterName = GetConverterName(concreteType);
-                sb.AppendLine($"                            \"{discValue}\" => new {concreteConverterName}().Read(ref reader, options),");
+                sb.AppendLine($"                            case \"{discValue}\":");
+                sb.AppendLine($"                                {varName} = new {concreteConverterName}().Read(ref reader, options);");
+                sb.AppendLine("                                break;");
             }
             
-            sb.AppendLine("                            _ => null");
-            sb.AppendLine("                        };");
+            sb.AppendLine("                            default:");
+            sb.AppendLine("                                reader.Skip();");
+            sb.AppendLine($"                                {varName} = null;");
+            sb.AppendLine("                                break;");
+            sb.AppendLine("                        }");
             return;
         }
         
@@ -3155,17 +3160,23 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             // Use sibling discriminator to determine concrete type for dictionary values
             var discriminatorVarName = $"_{siblingInfo.DiscriminatorPropertyName.ToLowerInvariant()}";
-            sb.AppendLine($"                                {valueTypeStr} value = {discriminatorVarName}.ToString() switch");
+            sb.AppendLine($"                                {valueTypeStr} value;");
+            sb.AppendLine($"                                switch ({discriminatorVarName}.ToString())");
             sb.AppendLine("                                {");
             
             foreach (var (discValue, concreteType) in siblingInfo.Mappings)
             {
                 var concreteConverterName = GetConverterName(concreteType);
-                sb.AppendLine($"                                    \"{discValue}\" => new {concreteConverterName}().Read(ref reader, options),");
+                sb.AppendLine($"                                    case \"{discValue}\":");
+                sb.AppendLine($"                                        value = new {concreteConverterName}().Read(ref reader, options);");
+                sb.AppendLine("                                        break;");
             }
             
-            sb.AppendLine("                                    _ => null");
-            sb.AppendLine("                                };");
+            sb.AppendLine("                                    default:");
+            sb.AppendLine("                                        reader.Skip();");
+            sb.AppendLine("                                        value = null;");
+            sb.AppendLine("                                        break;");
+            sb.AppendLine("                                }");
         }
         else
         {
