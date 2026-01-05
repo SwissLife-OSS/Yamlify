@@ -95,6 +95,7 @@ namespace Yamlify.Tests.Serialization;
 [YamlSerializable(typeof(TypeCollision.NamespaceB.Config))]
 // Root-level collection types
 [YamlSerializable(typeof(List<SimpleClass>))]
+[YamlSerializable(typeof(IEnumerable<SimpleClass>))]
 [YamlSerializable(typeof(Dictionary<string, SimpleClass>))]
 // Default value preservation test types
 [YamlSerializable(typeof(ClassWithPropertyDefaults))]
