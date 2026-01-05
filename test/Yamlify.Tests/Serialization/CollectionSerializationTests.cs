@@ -780,6 +780,43 @@ public class CollectionSerializationTests
     }
 
     [Fact]
+    public void SerializeEmptyRootLevelList_ProducesFlowStyleEmptySequence()
+    {
+        var list = new List<SimpleClass>();
+
+        var yaml = YamlSerializer.Serialize(list, TestSerializerContext.Default.ListSimpleClass);
+
+        // Empty root-level list should produce flow-style empty sequence []
+        Assert.Equal("[]", yaml.Trim());
+    }
+
+    [Fact]
+    public void SerializeEmptyRootLevelIEnumerable_ProducesFlowStyleEmptySequence()
+    {
+        IEnumerable<SimpleClass> items = Array.Empty<SimpleClass>();
+
+        var yaml = YamlSerializer.Serialize(items, TestSerializerContext.Default.IEnumerableSimpleClass);
+
+        // Empty root-level IEnumerable should produce flow-style empty sequence []
+        Assert.Equal("[]", yaml.Trim());
+    }
+
+    [Fact]
+    public void SerializeRootLevelIEnumerable_WithItems_ProducesBlockStyleSequence()
+    {
+        IEnumerable<SimpleClass> items = new[]
+        {
+            new SimpleClass { Name = "First", Value = 1, IsActive = true },
+            new SimpleClass { Name = "Second", Value = 2, IsActive = false }
+        };
+
+        var yaml = YamlSerializer.Serialize(items, TestSerializerContext.Default.IEnumerableSimpleClass);
+
+        Assert.Contains("name: First", yaml);
+        Assert.Contains("name: Second", yaml);
+    }
+
+    [Fact]
     public void SerializeRootLevelDictionary()
     {
         var dict = new Dictionary<string, SimpleClass>

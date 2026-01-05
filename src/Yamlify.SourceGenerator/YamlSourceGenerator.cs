@@ -2900,14 +2900,48 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     /// </summary>
     private static void GenerateRootCollectionWrite(StringBuilder sb, ITypeSymbol collectionType, ITypeSymbol elementType, IReadOnlyList<TypeToGenerate> allTypes)
     {
-        sb.AppendLine("            writer.WriteSequenceStart();");
-        sb.AppendLine("            foreach (var item in value)");
+        // Use flow style for empty collections to output [] instead of nothing.
+        // For IEnumerable<T> that doesn't implement ICollection, we use TryGetNonEnumeratedCount or enumerate.
+        // Since we need to enumerate anyway for writing, we just check ICollection first for efficiency.
+        sb.AppendLine("            var hasItems = false;");
+        sb.AppendLine("            if (value is System.Collections.ICollection collection)");
         sb.AppendLine("            {");
-        
-        GenerateElementWrite(sb, "item", elementType, allTypes, "                ");
-        
+        sb.AppendLine("                hasItems = collection.Count > 0;");
         sb.AppendLine("            }");
-        sb.AppendLine("            writer.WriteSequenceEnd();");
+        sb.AppendLine("            else");
+        sb.AppendLine("            {");
+        sb.AppendLine("                // For pure IEnumerable, we need to start iterating to know if it's empty");
+        sb.AppendLine("                using var enumerator = value.GetEnumerator();");
+        sb.AppendLine("                hasItems = enumerator.MoveNext();");
+        sb.AppendLine("                if (hasItems)");
+        sb.AppendLine("                {");
+        sb.AppendLine("                    // Non-empty IEnumerable - write sequence with first item, then rest");
+        sb.AppendLine("                    writer.WriteSequenceStart();");
+        sb.AppendLine("                    do");
+        sb.AppendLine("                    {");
+        GenerateElementWrite(sb, "enumerator.Current", elementType, allTypes, "                        ");
+        sb.AppendLine("                    } while (enumerator.MoveNext());");
+        sb.AppendLine("                    writer.WriteSequenceEnd();");
+        sb.AppendLine("                    return;");
+        sb.AppendLine("                }");
+        sb.AppendLine("            }");
+        sb.AppendLine();
+        sb.AppendLine("            if (!hasItems)");
+        sb.AppendLine("            {");
+        sb.AppendLine("                writer.WriteSequenceStart(Yamlify.CollectionStyle.Flow);");
+        sb.AppendLine("                writer.WriteSequenceEnd();");
+        sb.AppendLine("            }");
+        sb.AppendLine("            else");
+        sb.AppendLine("            {");
+        sb.AppendLine("                writer.WriteSequenceStart();");
+        sb.AppendLine("                foreach (var item in value)");
+        sb.AppendLine("                {");
+        
+        GenerateElementWrite(sb, "item", elementType, allTypes, "                    ");
+        
+        sb.AppendLine("                }");
+        sb.AppendLine("                writer.WriteSequenceEnd();");
+        sb.AppendLine("            }");
         sb.AppendLine("        }");
     }
     
