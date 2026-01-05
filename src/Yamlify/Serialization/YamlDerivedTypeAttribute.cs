@@ -4,7 +4,7 @@ namespace Yamlify.Serialization;
 /// Specifies polymorphic type information.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, AllowMultiple = true)]
-public sealed class YamlDerivedTypeAttribute : Attribute
+public class YamlDerivedTypeAttribute : Attribute
 {
     /// <summary>
     /// Gets the derived type.

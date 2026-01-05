@@ -31,7 +31,7 @@ namespace Yamlify.Serialization;
 /// </code>
 /// </example>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-public sealed class YamlSerializableAttribute : Attribute
+public class YamlSerializableAttribute : Attribute
 {
     /// <summary>
     /// Gets the type for which to generate serialization metadata.

@@ -22,6 +22,7 @@ namespace Yamlify.SourceGenerator;
 public sealed class YamlSourceGenerator : IIncrementalGenerator
 {
     private const string YamlSerializableAttribute = "Yamlify.Serialization.YamlSerializableAttribute";
+    private const string YamlSerializableAttributeGeneric = "Yamlify.Serialization.YamlSerializableAttribute<T>";
     private const string YamlSerializerContextBase = "Yamlify.Serialization.YamlSerializerContext";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -89,63 +90,86 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         foreach (var attributeData in classSymbol.GetAttributes())
         {
             var attrName = attributeData.AttributeClass?.ToDisplayString();
+            var attrOriginalDef = attributeData.AttributeClass?.OriginalDefinition?.ToDisplayString();
+            
+            // Support both [YamlSerializable(typeof(T))] and [YamlSerializable<T>]
+            INamedTypeSymbol? typeArg = null;
+            var isYamlSerializableAttribute = false;
+            
             if (attrName == YamlSerializableAttribute)
             {
+                // Non-generic: [YamlSerializable(typeof(T))]
                 if (attributeData.ConstructorArguments.Length > 0 &&
-                    attributeData.ConstructorArguments[0].Value is INamedTypeSymbol typeArg)
+                    attributeData.ConstructorArguments[0].Value is INamedTypeSymbol ctorArg)
                 {
-                    // Check for per-type PropertyOrdering override
-                    PropertyOrderingMode? typeOrdering = null;
-                    string? typeDiscriminatorPropertyName = null;
-                    List<INamedTypeSymbol>? derivedTypes = null;
-                    List<string>? derivedTypeDiscriminators = null;
-                    
-                    foreach (var namedArg in attributeData.NamedArguments)
-                    {
-                        if (namedArg.Key == "PropertyOrdering" && namedArg.Value.Value is int orderingValue && orderingValue >= 0)
-                        {
-                            // Only set if not Inherit (-1)
-                            typeOrdering = (PropertyOrderingMode)orderingValue;
-                        }
-                        else if (namedArg.Key == "TypeDiscriminatorPropertyName" && namedArg.Value.Value is string discPropName)
-                        {
-                            typeDiscriminatorPropertyName = discPropName;
-                        }
-                        else if (namedArg.Key == "DerivedTypes" && !namedArg.Value.IsNull)
-                        {
-                            derivedTypes = namedArg.Value.Values
-                                .Where(v => v.Value is INamedTypeSymbol)
-                                .Select(v => (INamedTypeSymbol)v.Value!)
-                                .ToList();
-                        }
-                        else if (namedArg.Key == "DerivedTypeDiscriminators" && !namedArg.Value.IsNull)
-                        {
-                            derivedTypeDiscriminators = namedArg.Value.Values
-                                .Where(v => v.Value is string)
-                                .Select(v => (string)v.Value!)
-                                .ToList();
-                        }
-                    }
-                    
-                    // Build PolymorphicInfo if polymorphic configuration is specified
-                    PolymorphicInfo? polymorphicConfig = null;
-                    if (typeDiscriminatorPropertyName is not null && derivedTypes is not null && derivedTypes.Count > 0)
-                    {
-                        var derivedTypeMappings = new List<(string Discriminator, INamedTypeSymbol DerivedType)>();
-                        for (int i = 0; i < derivedTypes.Count; i++)
-                        {
-                            var derivedType = derivedTypes[i];
-                            // Use explicit discriminator if provided, otherwise use type name
-                            var discriminator = (derivedTypeDiscriminators is not null && i < derivedTypeDiscriminators.Count)
-                                ? derivedTypeDiscriminators[i]
-                                : derivedType.Name;
-                            derivedTypeMappings.Add((discriminator, derivedType));
-                        }
-                        polymorphicConfig = new PolymorphicInfo(typeDiscriminatorPropertyName, derivedTypeMappings);
-                    }
-                    
-                    typesToGenerate.Add(new TypeToGenerate(typeArg, typeOrdering, polymorphicConfig));
+                    typeArg = ctorArg;
+                    isYamlSerializableAttribute = true;
                 }
+            }
+            else if (attrOriginalDef == YamlSerializableAttributeGeneric)
+            {
+                // Generic: [YamlSerializable<T>]
+                if (attributeData.AttributeClass is { IsGenericType: true, TypeArguments.Length: > 0 } attrClass &&
+                    attrClass.TypeArguments[0] is INamedTypeSymbol genericArg)
+                {
+                    typeArg = genericArg;
+                    isYamlSerializableAttribute = true;
+                }
+            }
+            
+            if (isYamlSerializableAttribute && typeArg is not null)
+            {
+                // Check for per-type PropertyOrdering override
+                PropertyOrderingMode? typeOrdering = null;
+                string? typeDiscriminatorPropertyName = null;
+                List<INamedTypeSymbol>? derivedTypes = null;
+                List<string>? derivedTypeDiscriminators = null;
+                
+                foreach (var namedArg in attributeData.NamedArguments)
+                {
+                    if (namedArg.Key == "PropertyOrdering" && namedArg.Value.Value is int orderingValue && orderingValue >= 0)
+                    {
+                        // Only set if not Inherit (-1)
+                        typeOrdering = (PropertyOrderingMode)orderingValue;
+                    }
+                    else if (namedArg.Key == "TypeDiscriminatorPropertyName" && namedArg.Value.Value is string discPropName)
+                    {
+                        typeDiscriminatorPropertyName = discPropName;
+                    }
+                    else if (namedArg.Key == "DerivedTypes" && !namedArg.Value.IsNull)
+                    {
+                        derivedTypes = namedArg.Value.Values
+                            .Where(v => v.Value is INamedTypeSymbol)
+                            .Select(v => (INamedTypeSymbol)v.Value!)
+                            .ToList();
+                    }
+                    else if (namedArg.Key == "DerivedTypeDiscriminators" && !namedArg.Value.IsNull)
+                    {
+                        derivedTypeDiscriminators = namedArg.Value.Values
+                            .Where(v => v.Value is string)
+                            .Select(v => (string)v.Value!)
+                            .ToList();
+                    }
+                }
+                
+                // Build PolymorphicInfo if polymorphic configuration is specified
+                PolymorphicInfo? polymorphicConfig = null;
+                if (typeDiscriminatorPropertyName is not null && derivedTypes is not null && derivedTypes.Count > 0)
+                {
+                    var derivedTypeMappings = new List<(string Discriminator, INamedTypeSymbol DerivedType)>();
+                    for (int i = 0; i < derivedTypes.Count; i++)
+                    {
+                        var derivedType = derivedTypes[i];
+                        // Use explicit discriminator if provided, otherwise use type name
+                        var discriminator = (derivedTypeDiscriminators is not null && i < derivedTypeDiscriminators.Count)
+                            ? derivedTypeDiscriminators[i]
+                            : derivedType.Name;
+                        derivedTypeMappings.Add((discriminator, derivedType));
+                    }
+                    polymorphicConfig = new PolymorphicInfo(typeDiscriminatorPropertyName, derivedTypeMappings);
+                }
+                
+                typesToGenerate.Add(new TypeToGenerate(typeArg, typeOrdering, polymorphicConfig));
             }
             else if (attrName == "Yamlify.Serialization.YamlSourceGenerationOptionsAttribute")
             {
