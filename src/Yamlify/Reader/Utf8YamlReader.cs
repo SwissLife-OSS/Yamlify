@@ -587,6 +587,13 @@ public ref partial struct Utf8YamlReader
                 // Keep reading until we exit the current depth
             }
         }
+        else if (_tokenType is YamlTokenType.Scalar)
+        {
+            // For scalar values (including nulls like ~, null, Null, NULL), just advance to the next token
+            Read();
+        }
+        // For other tokens (end markers, etc.), do nothing - they're structural tokens
+        // that don't need to be skipped
     }
 }
 

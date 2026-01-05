@@ -566,6 +566,8 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         
         sb.AppendLine("            if (reader.TokenType != YamlTokenType.MappingStart)");
         sb.AppendLine("            {");
+        sb.AppendLine("                // Skip unexpected token to prevent infinite loops when reading collections");
+        sb.AppendLine("                reader.Skip();");
         sb.AppendLine("                return default;");
         sb.AppendLine("            }");
         sb.AppendLine();
@@ -2819,6 +2821,8 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         
         sb.AppendLine("            if (reader.TokenType != YamlTokenType.SequenceStart)");
         sb.AppendLine("            {");
+        sb.AppendLine("                // Skip unexpected token to prevent infinite loops when reading collections");
+        sb.AppendLine("                reader.Skip();");
         sb.AppendLine("                return default;");
         sb.AppendLine("            }");
         sb.AppendLine();
@@ -2860,6 +2864,8 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         
         sb.AppendLine("            if (reader.TokenType != YamlTokenType.MappingStart)");
         sb.AppendLine("            {");
+        sb.AppendLine("                // Skip unexpected token to prevent infinite loops when reading collections");
+        sb.AppendLine("                reader.Skip();");
         sb.AppendLine("                return default;");
         sb.AppendLine("            }");
         sb.AppendLine();
