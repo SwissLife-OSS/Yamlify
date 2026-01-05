@@ -473,6 +473,255 @@ public class InfiniteLoopRegressionTests
     }
 
     #endregion
+
+    #region Skip() Nested Mapping Tests
+
+    /// <summary>
+    /// Model with properties that include nested mappings to test Skip() behavior.
+    /// </summary>
+    public class ServiceConfig
+    {
+        public string? Name { get; set; }
+        public DeploymentConfig? Deployment { get; set; }
+        public string? Namespace { get; set; }
+    }
+
+    public class DeploymentConfig
+    {
+        public int Replicas { get; set; }
+        public ResourceConfig? Resources { get; set; }
+    }
+
+    public class ResourceConfig
+    {
+        public string? Cpu { get; set; }
+        public string? Memory { get; set; }
+    }
+
+    /// <summary>
+    /// Model with sibling discriminator for testing unknown discriminator Skip().
+    /// </summary>
+    public class ServiceWithPlugins
+    {
+        public string? Name { get; set; }
+        public PluginType PluginKind { get; set; }
+        
+        [YamlSiblingDiscriminator(nameof(PluginKind))]
+        [YamlDiscriminatorMapping(nameof(PluginType.Metrics), typeof(MetricsPlugin))]
+        [YamlDiscriminatorMapping(nameof(PluginType.Logging), typeof(LoggingPlugin))]
+        public PluginBase? Plugin { get; set; }
+        
+        public string? Description { get; set; }
+    }
+
+    public enum PluginType
+    {
+        Metrics,
+        Logging,
+        Tracing
+    }
+
+    public abstract class PluginBase
+    {
+    }
+
+    public class MetricsPlugin : PluginBase
+    {
+        public int Port { get; set; }
+    }
+
+    public class LoggingPlugin : PluginBase
+    {
+        public string? Level { get; set; }
+    }
+
+    /// <summary>
+    /// Test: Skip() on a nested mapping should advance past the nested MappingEnd,
+    /// not the parent's MappingEnd. This was the root cause of the OOM bug.
+    /// When deserializing a mapping and encountering an unknown property with a nested
+    /// mapping value, Skip() must consume the entire nested mapping AND advance past
+    /// its MappingEnd marker, so the parent loop continues correctly.
+    /// </summary>
+    [Fact]
+    public void Deserialize_UnknownPropertyWithNestedMapping_PropertiesAfterStillParsed()
+    {
+        var yaml = """
+            name: my-service
+            unknown-nested-property:
+              nested-key1: value1
+              nested-key2: value2
+              deeply-nested:
+                key: value
+            namespace: production
+            """;
+
+        // The key issue: when unknown-nested-property is skipped, the reader should
+        // end up AFTER the nested MappingEnd, so "namespace" is still read.
+        var result = YamlSerializer.Deserialize(yaml, InfiniteLoopTestContext.Default.ServiceConfig);
+
+        Assert.NotNull(result);
+        Assert.Equal("my-service", result.Name);
+        Assert.Equal("production", result.Namespace); // This was not being set before the fix
+    }
+
+    /// <summary>
+    /// Test: Multiple unknown properties with nested mappings should all be skipped correctly.
+    /// </summary>
+    [Fact]
+    public void Deserialize_MultipleUnknownPropertiesWithNestedMappings_DoesNotHang()
+    {
+        var yaml = """
+            name: my-service
+            unknown-property-1:
+              key1: value1
+            unknown-property-2:
+              nested:
+                deep: value
+            deployment:
+              replicas: 3
+              resources:
+                cpu: 100m
+                memory: 256Mi
+            unknown-property-3:
+              another: nested
+            namespace: production
+            """;
+
+        var result = YamlSerializer.Deserialize(yaml, InfiniteLoopTestContext.Default.ServiceConfig);
+
+        Assert.NotNull(result);
+        Assert.Equal("my-service", result.Name);
+        Assert.Equal("production", result.Namespace);
+        Assert.NotNull(result.Deployment);
+        Assert.Equal(3, result.Deployment.Replicas);
+        Assert.NotNull(result.Deployment.Resources);
+        Assert.Equal("100m", result.Deployment.Resources.Cpu);
+        Assert.Equal("256Mi", result.Deployment.Resources.Memory);
+    }
+
+    /// <summary>
+    /// Test: Unknown property with deeply nested mapping should be skipped correctly.
+    /// </summary>
+    [Fact]
+    public void Deserialize_DeeplyNestedUnknownProperty_DoesNotHang()
+    {
+        var yaml = """
+            name: my-service
+            very-deeply-nested-unknown:
+              level1:
+                level2:
+                  level3:
+                    level4:
+                      level5:
+                        key: value
+            namespace: production
+            """;
+
+        var result = YamlSerializer.Deserialize(yaml, InfiniteLoopTestContext.Default.ServiceConfig);
+
+        Assert.NotNull(result);
+        Assert.Equal("my-service", result.Name);
+        Assert.Equal("production", result.Namespace);
+    }
+
+    /// <summary>
+    /// Test: Sibling discriminator with unknown discriminator value should skip the property
+    /// and continue parsing remaining properties without causing infinite loop.
+    /// </summary>
+    [Fact]
+    public void Deserialize_SiblingDiscriminatorWithUnknownValue_DoesNotHang()
+    {
+        var yaml = """
+            name: my-service
+            plugin-kind: Tracing
+            plugin:
+              endpoint: http://jaeger:14268
+              sample-rate: 0.1
+            description: A service with unknown plugin type
+            """;
+
+        // PluginKind.Tracing exists as enum value but has no mapping to a concrete type
+        // The generated code should skip the plugin property and continue to description
+        var result = YamlSerializer.Deserialize(yaml, InfiniteLoopTestContext.Default.ServiceWithPlugins);
+
+        Assert.NotNull(result);
+        Assert.Equal("my-service", result.Name);
+        Assert.Equal(PluginType.Tracing, result.PluginKind);
+        Assert.Null(result.Plugin); // Unknown discriminator, plugin not deserialized
+        Assert.Equal("A service with unknown plugin type", result.Description); // Should still be parsed
+    }
+
+    /// <summary>
+    /// Test: Sibling discriminator with known value works correctly.
+    /// </summary>
+    [Fact]
+    public void Deserialize_SiblingDiscriminatorWithKnownValue_WorksCorrectly()
+    {
+        var yaml = """
+            name: metrics-service
+            plugin-kind: Metrics
+            plugin:
+              port: 9090
+            description: A service with metrics plugin
+            """;
+
+        var result = YamlSerializer.Deserialize(yaml, InfiniteLoopTestContext.Default.ServiceWithPlugins);
+
+        Assert.NotNull(result);
+        Assert.Equal("metrics-service", result.Name);
+        Assert.Equal(PluginType.Metrics, result.PluginKind);
+        Assert.NotNull(result.Plugin);
+        Assert.IsType<MetricsPlugin>(result.Plugin);
+        Assert.Equal(9090, ((MetricsPlugin)result.Plugin).Port);
+        Assert.Equal("A service with metrics plugin", result.Description);
+    }
+
+    /// <summary>
+    /// Test: List of items with sibling discriminator where some have unknown values.
+    /// </summary>
+    [Fact]
+    public void Deserialize_ListWithSiblingDiscriminatorSomeUnknown_DoesNotHang()
+    {
+        var yaml = """
+            - name: service-1
+              plugin-kind: Metrics
+              plugin:
+                port: 9090
+              description: Has metrics
+            - name: service-2
+              plugin-kind: Tracing
+              plugin:
+                endpoint: http://jaeger
+              description: Has unknown tracing
+            - name: service-3
+              plugin-kind: Logging
+              plugin:
+                level: debug
+              description: Has logging
+            """;
+
+        var result = YamlSerializer.Deserialize(yaml, InfiniteLoopTestContext.Default.ListServiceWithPlugins);
+
+        Assert.NotNull(result);
+        Assert.Equal(3, result.Count);
+        
+        // First: known discriminator
+        Assert.Equal("service-1", result[0].Name);
+        Assert.IsType<MetricsPlugin>(result[0].Plugin);
+        Assert.Equal("Has metrics", result[0].Description);
+        
+        // Second: unknown discriminator (Tracing has no mapping)
+        Assert.Equal("service-2", result[1].Name);
+        Assert.Null(result[1].Plugin);
+        Assert.Equal("Has unknown tracing", result[1].Description);
+        
+        // Third: known discriminator
+        Assert.Equal("service-3", result[2].Name);
+        Assert.IsType<LoggingPlugin>(result[2].Plugin);
+        Assert.Equal("Has logging", result[2].Description);
+    }
+
+    #endregion
 }
 
 /// <summary>
@@ -488,6 +737,14 @@ public class InfiniteLoopRegressionTests
 [YamlSerializable(typeof(InfiniteLoopRegressionTests.ContainerWithObjectDictionary))]
 [YamlSerializable(typeof(List<InfiniteLoopRegressionTests.ObjectItem>))]
 [YamlSerializable(typeof(Dictionary<string, InfiniteLoopRegressionTests.ObjectItem>))]
+[YamlSerializable(typeof(InfiniteLoopRegressionTests.ServiceConfig))]
+[YamlSerializable(typeof(InfiniteLoopRegressionTests.DeploymentConfig))]
+[YamlSerializable(typeof(InfiniteLoopRegressionTests.ResourceConfig))]
+[YamlSerializable(typeof(InfiniteLoopRegressionTests.ServiceWithPlugins))]
+[YamlSerializable(typeof(InfiniteLoopRegressionTests.PluginBase))]
+[YamlSerializable(typeof(InfiniteLoopRegressionTests.MetricsPlugin))]
+[YamlSerializable(typeof(InfiniteLoopRegressionTests.LoggingPlugin))]
+[YamlSerializable(typeof(List<InfiniteLoopRegressionTests.ServiceWithPlugins>))]
 public partial class InfiniteLoopTestContext : YamlSerializerContext
 {
 }

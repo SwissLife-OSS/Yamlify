@@ -576,6 +576,7 @@ public ref partial struct Utf8YamlReader
 
     /// <summary>
     /// Skips the current token and all its children (for collections).
+    /// After Skip() returns, the reader is positioned at the token AFTER the skipped content.
     /// </summary>
     public void Skip()
     {
@@ -586,14 +587,20 @@ public ref partial struct Utf8YamlReader
             {
                 // Keep reading until we exit the current depth
             }
-        }
-        else if (_tokenType is YamlTokenType.Scalar)
-        {
-            // For scalar values (including nulls like ~, null, Null, NULL), just advance to the next token
+            // After the while loop, we're at the end marker (MappingEnd/SequenceEnd).
+            // Advance past it so the caller doesn't confuse it with their parent's end marker.
             Read();
         }
-        // For other tokens (end markers, etc.), do nothing - they're structural tokens
-        // that don't need to be skipped
+        else if (_tokenType is YamlTokenType.Scalar
+                 or YamlTokenType.MappingEnd
+                 or YamlTokenType.SequenceEnd)
+        {
+            // For scalar values (including nulls), and end markers that shouldn't be
+            // at current position, advance to the next token to prevent infinite loops
+            // when converters call Skip() on unexpected token types
+            Read();
+        }
+        // For other tokens (None, DocumentStart, DocumentEnd), do nothing
     }
 }
 
