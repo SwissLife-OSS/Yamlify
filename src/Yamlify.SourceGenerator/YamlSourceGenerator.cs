@@ -23,6 +23,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
 {
     private const string YamlSerializableAttribute = "Yamlify.Serialization.YamlSerializableAttribute";
     private const string YamlSerializableAttributeGeneric = "Yamlify.Serialization.YamlSerializableAttribute<T>";
+    private const string YamlDerivedTypeMappingAttributeGeneric = "Yamlify.Serialization.YamlDerivedTypeMappingAttribute<TBase, TDerived>";
     private const string YamlSerializerContextBase = "Yamlify.Serialization.YamlSerializerContext";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -87,6 +88,43 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         var ignoreEmptyObjects = false;
         var discriminatorPosition = DiscriminatorPositionMode.PropertyOrder;
         
+        // First pass: collect YamlDerivedTypeMapping attributes
+        // Key: base type display string, Value: list of (discriminator, derivedType)
+        var derivedTypeMappingsFromAttrs = new Dictionary<string, List<(string Discriminator, INamedTypeSymbol DerivedType)>>();
+        
+        foreach (var attributeData in classSymbol.GetAttributes())
+        {
+            var attrOriginalDef = attributeData.AttributeClass?.OriginalDefinition?.ToDisplayString();
+            
+            if (attrOriginalDef == YamlDerivedTypeMappingAttributeGeneric)
+            {
+                // [YamlDerivedTypeMapping<TBase, TDerived>("discriminator")]
+                if (attributeData.AttributeClass is { IsGenericType: true, TypeArguments.Length: 2 } attrClass &&
+                    attrClass.TypeArguments[0] is INamedTypeSymbol mappingBaseType &&
+                    attrClass.TypeArguments[1] is INamedTypeSymbol mappingDerivedType)
+                {
+                    var baseTypeKey = mappingBaseType.ToDisplayString();
+                    
+                    // Get discriminator from constructor argument (optional)
+                    string? discriminator = null;
+                    if (attributeData.ConstructorArguments.Length > 0 && 
+                        attributeData.ConstructorArguments[0].Value is string discValue)
+                    {
+                        discriminator = discValue;
+                    }
+                    discriminator ??= mappingDerivedType.Name;
+                    
+                    if (!derivedTypeMappingsFromAttrs.TryGetValue(baseTypeKey, out var mappings))
+                    {
+                        mappings = new List<(string, INamedTypeSymbol)>();
+                        derivedTypeMappingsFromAttrs[baseTypeKey] = mappings;
+                    }
+                    mappings.Add((discriminator, mappingDerivedType));
+                }
+            }
+        }
+        
+        // Second pass: process YamlSerializable attributes
         foreach (var attributeData in classSymbol.GetAttributes())
         {
             var attrName = attributeData.AttributeClass?.ToDisplayString();
@@ -154,8 +192,19 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 
                 // Build PolymorphicInfo if polymorphic configuration is specified
                 PolymorphicInfo? polymorphicConfig = null;
-                if (typeDiscriminatorPropertyName is not null && derivedTypes is not null && derivedTypes.Count > 0)
+                var typeKey = typeArg.ToDisplayString();
+                
+                // Check for derived type mappings from YamlDerivedTypeMappingAttribute
+                if (typeDiscriminatorPropertyName is not null && 
+                    derivedTypeMappingsFromAttrs.TryGetValue(typeKey, out var mappingsFromAttr) && 
+                    mappingsFromAttr.Count > 0)
                 {
+                    // Use mappings from YamlDerivedTypeMappingAttribute
+                    polymorphicConfig = new PolymorphicInfo(typeDiscriminatorPropertyName, mappingsFromAttr);
+                }
+                else if (typeDiscriminatorPropertyName is not null && derivedTypes is not null && derivedTypes.Count > 0)
+                {
+                    // Use inline DerivedTypes/DerivedTypeDiscriminators arrays
                     var derivedTypeMappings = new List<(string Discriminator, INamedTypeSymbol DerivedType)>();
                     for (int i = 0; i < derivedTypes.Count; i++)
                     {

@@ -1,5 +1,10 @@
 #nullable enable
 Yamlify.Serialization.YamlDerivedTypeAttribute<T>
 Yamlify.Serialization.YamlDerivedTypeAttribute<T>.YamlDerivedTypeAttribute(string? typeDiscriminator = null) -> void
+Yamlify.Serialization.YamlDerivedTypeMappingAttribute<TBase, TDerived>
+Yamlify.Serialization.YamlDerivedTypeMappingAttribute<TBase, TDerived>.BaseType.get -> System.Type!
+Yamlify.Serialization.YamlDerivedTypeMappingAttribute<TBase, TDerived>.DerivedType.get -> System.Type!
+Yamlify.Serialization.YamlDerivedTypeMappingAttribute<TBase, TDerived>.TypeDiscriminator.get -> string?
+Yamlify.Serialization.YamlDerivedTypeMappingAttribute<TBase, TDerived>.YamlDerivedTypeMappingAttribute(string? typeDiscriminator = null) -> void
 Yamlify.Serialization.YamlSerializableAttribute<T>
 Yamlify.Serialization.YamlSerializableAttribute<T>.YamlSerializableAttribute() -> void

@@ -61,6 +61,60 @@ public class GenericAttributeTests
         Assert.IsType<GenericCircle>(result);
         Assert.Equal(5.0, ((GenericCircle)result).Radius);
     }
+
+    [Fact]
+    public void Serialize_WithDerivedTypeMappingAttribute_ShouldRoundTrip()
+    {
+        // Arrange
+        ITransport transport = new Automobile { Manufacturer = "Tesla", Doors = 4 };
+
+        // Act
+        var yaml = YamlSerializer.Serialize(transport, DerivedTypeMappingContext.Default.ITransport);
+        var result = YamlSerializer.Deserialize<ITransport>(yaml, DerivedTypeMappingContext.Default.ITransport);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.IsType<Automobile>(result);
+        var auto = (Automobile)result;
+        Assert.Equal("Tesla", auto.Manufacturer);
+        Assert.Equal(4, auto.Doors);
+    }
+
+    [Fact]
+    public void Serialize_WithDerivedTypeMappingAttribute_ShouldIncludeDiscriminator()
+    {
+        // Arrange
+        ITransport transport = new Bike { Manufacturer = "Harley", HasSidecar = true };
+
+        // Act
+        var yaml = YamlSerializer.Serialize(transport, DerivedTypeMappingContext.Default.ITransport);
+
+        // Assert
+        Assert.Contains("kind: bike", yaml);
+        Assert.Contains("manufacturer: Harley", yaml);
+        Assert.Contains("has-sidecar: true", yaml);
+    }
+
+    [Fact]
+    public void Deserialize_WithDerivedTypeMappingAttribute_ShouldResolveCorrectType()
+    {
+        // Arrange
+        var yaml = """
+            kind: automobile
+            manufacturer: BMW
+            doors: 2
+            """;
+
+        // Act
+        var result = YamlSerializer.Deserialize<ITransport>(yaml, DerivedTypeMappingContext.Default.ITransport);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.IsType<Automobile>(result);
+        var auto = (Automobile)result;
+        Assert.Equal("BMW", auto.Manufacturer);
+        Assert.Equal(2, auto.Doors);
+    }
 }
 
 /// <summary>
@@ -110,3 +164,39 @@ public class GenericRectangle : IGenericShape
     DerivedTypes = [typeof(GenericCircle), typeof(GenericRectangle)],
     DerivedTypeDiscriminators = ["circle", "rectangle"])]
 public partial class GenericTestSerializerContext : YamlSerializerContext;
+
+/// <summary>
+/// Base interface for transport polymorphic tests using YamlDerivedTypeMappingAttribute.
+/// </summary>
+public interface ITransport
+{
+    string? Manufacturer { get; set; }
+}
+
+/// <summary>
+/// Automobile implementation for YamlDerivedTypeMappingAttribute tests.
+/// </summary>
+public class Automobile : ITransport
+{
+    public string? Manufacturer { get; set; }
+    public int Doors { get; set; }
+}
+
+/// <summary>
+/// Bike implementation for YamlDerivedTypeMappingAttribute tests.
+/// </summary>
+public class Bike : ITransport
+{
+    public string? Manufacturer { get; set; }
+    public bool HasSidecar { get; set; }
+}
+
+/// <summary>
+/// Serializer context using YamlDerivedTypeMappingAttribute for cleaner polymorphic configuration.
+/// </summary>
+[YamlSerializable<ITransport>(TypeDiscriminatorPropertyName = "kind")]
+[YamlDerivedTypeMapping<ITransport, Automobile>("automobile")]
+[YamlDerivedTypeMapping<ITransport, Bike>("bike")]
+[YamlSerializable<Automobile>]
+[YamlSerializable<Bike>]
+public partial class DerivedTypeMappingContext : YamlSerializerContext;
