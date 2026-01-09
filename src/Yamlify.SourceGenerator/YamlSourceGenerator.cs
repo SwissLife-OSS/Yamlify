@@ -218,7 +218,22 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                     polymorphicConfig = new PolymorphicInfo(typeDiscriminatorPropertyName, derivedTypeMappings);
                 }
                 
-                typesToGenerate.Add(new TypeToGenerate(typeArg, typeOrdering, polymorphicConfig));
+                // Check if type has [YamlConverter] attribute for custom converter support
+                INamedTypeSymbol? customConverterType = null;
+                foreach (var typeAttr in typeArg.GetAttributes())
+                {
+                    if (typeAttr.AttributeClass?.ToDisplayString() == "Yamlify.Serialization.YamlConverterAttribute")
+                    {
+                        if (typeAttr.ConstructorArguments.Length > 0 &&
+                            typeAttr.ConstructorArguments[0].Value is INamedTypeSymbol converterType)
+                        {
+                            customConverterType = converterType;
+                        }
+                        break;
+                    }
+                }
+                
+                typesToGenerate.Add(new TypeToGenerate(typeArg, typeOrdering, polymorphicConfig, customConverterType));
             }
             else if (attrName == "Yamlify.Serialization.YamlSourceGenerationOptionsAttribute")
             {
@@ -426,10 +441,26 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         var propertyName = propertyNameMap[type.Symbol.ToDisplayString()];
         var fullTypeName = type.Symbol.ToDisplayString();
         var converterName = GetConverterName(type.Symbol);
+        var hasCustomConverter = type.CustomConverterType is not null;
         
         sb.AppendLine($"    private YamlTypeInfo<{fullTypeName}> Create{propertyName}TypeInfo()");
         sb.AppendLine("    {");
-        sb.AppendLine($"        var converter = new {converterName}();");
+        
+        if (hasCustomConverter)
+        {
+            // Use the custom converter with GeneratedRead/GeneratedWrite delegates set via object initializer
+            var customConverterTypeName = type.CustomConverterType!.ToDisplayString();
+            sb.AppendLine($"        var converter = new {customConverterTypeName}");
+            sb.AppendLine("        {");
+            sb.AppendLine($"            GeneratedRead = {converterName}.ReadCore,");
+            sb.AppendLine($"            GeneratedWrite = {converterName}.WriteCore");
+            sb.AppendLine("        };");
+        }
+        else
+        {
+            sb.AppendLine($"        var converter = new {converterName}();");
+        }
+        
         sb.AppendLine($"        var properties = new List<YamlPropertyInfo>();");
         sb.AppendLine();
 
@@ -484,8 +515,18 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine($"            CreateInstance = static () => new {fullTypeName}(),");
         }
         
-        sb.AppendLine($"            SerializeAction = static (writer, value, options) => new {converterName}().Write(writer, value, options),");
-        sb.AppendLine($"            DeserializeFunc = static (ref Utf8YamlReader reader, YamlSerializerOptions options) => new {converterName}().Read(ref reader, options)");
+        // For custom converters, use the custom converter's methods (which may delegate to generated code)
+        if (hasCustomConverter)
+        {
+            sb.AppendLine($"            SerializeAction = (writer, value, options) => converter.Write(writer, value, options),");
+            sb.AppendLine($"            DeserializeFunc = (ref Utf8YamlReader reader, YamlSerializerOptions options) => converter.Read(ref reader, options)");
+        }
+        else
+        {
+            sb.AppendLine($"            SerializeAction = static (writer, value, options) => new {converterName}().Write(writer, value, options),");
+            sb.AppendLine($"            DeserializeFunc = static (ref Utf8YamlReader reader, YamlSerializerOptions options) => new {converterName}().Read(ref reader, options)");
+        }
+        
         sb.AppendLine("        };");
         sb.AppendLine("    }");
         sb.AppendLine();
@@ -496,12 +537,79 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         var converterName = GetConverterName(type.Symbol);
         var fullTypeName = type.Symbol.ToDisplayString();
 
+        // Check if this type has a custom converter - if so, generate static methods instead
+        if (type.CustomConverterType is not null)
+        {
+            GenerateStaticConverterMethods(sb, type, allTypes, compilation, propertyOrdering, discriminatorPosition, ignoreEmptyObjects);
+            return;
+        }
+
         sb.AppendLine($"    private sealed class {converterName} : YamlConverter<{fullTypeName}>");
         sb.AppendLine("    {");
         
         // Check if this is a polymorphic base type (from [YamlSerializable] or [YamlPolymorphic] attributes)
         var polyInfo = GetPolymorphicInfoForType(type);
         var isPolymorphicBase = polyInfo is not null && polyInfo.DerivedTypes.Count > 0;
+        
+        // Read method
+        GenerateReadMethod(sb, type, allTypes, compilation);
+        sb.AppendLine();
+
+        // Write method - use polymorphic dispatch for types with [YamlPolymorphic] and derived types
+        if (isPolymorphicBase)
+        {
+            GeneratePolymorphicWriteMethod(sb, type, polyInfo!, allTypes, compilation);
+        }
+        else
+        {
+            GenerateWriteMethod(sb, type, allTypes, compilation, propertyOrdering, discriminatorPosition, ignoreEmptyObjects);
+        }
+
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
+    /// <summary>
+    /// Generates static ReadCore and WriteCore methods for types with custom converters.
+    /// These methods are wired up to the GeneratedRead/GeneratedWrite delegates on the custom converter.
+    /// We generate a full converter class internally and wrap calls to it via static methods.
+    /// </summary>
+    private static void GenerateStaticConverterMethods(StringBuilder sb, TypeToGenerate type, IReadOnlyList<TypeToGenerate> allTypes, Compilation compilation, PropertyOrderingMode propertyOrdering, DiscriminatorPositionMode discriminatorPosition, bool ignoreEmptyObjects)
+    {
+        var converterName = GetConverterName(type.Symbol);
+        var fullTypeName = type.Symbol.ToDisplayString();
+        var isValueType = type.Symbol.IsValueType;
+        var nullableAnnotation = isValueType ? "" : "?";
+        
+        // Check if this is a polymorphic base type
+        var polyInfo = GetPolymorphicInfoForType(type);
+        var isPolymorphicBase = polyInfo is not null && polyInfo.DerivedTypes.Count > 0;
+
+        sb.AppendLine($"    /// <summary>");
+        sb.AppendLine($"    /// Generated converter for {type.Symbol.Name}. Since a custom converter exists ({type.CustomConverterType!.ToDisplayString()}),");
+        sb.AppendLine($"    /// static ReadCore/WriteCore methods are provided for delegation from the custom converter.");
+        sb.AppendLine($"    /// </summary>");
+        sb.AppendLine($"    private sealed class {converterName} : YamlConverter<{fullTypeName}>");
+        sb.AppendLine("    {");
+        
+        // Instance field for lazy initialization
+        sb.AppendLine($"        private static {converterName}? _instance;");
+        sb.AppendLine($"        private static {converterName} Instance => _instance ??= new {converterName}();");
+        sb.AppendLine();
+        
+        // Generate static ReadCore method that delegates to instance Read
+        sb.AppendLine($"        public static {fullTypeName}{nullableAnnotation} ReadCore(ref Utf8YamlReader reader, YamlSerializerOptions options)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            return Instance.Read(ref reader, options);");
+        sb.AppendLine("        }");
+        sb.AppendLine();
+        
+        // Generate static WriteCore method that delegates to instance Write
+        sb.AppendLine($"        public static void WriteCore(Utf8YamlWriter writer, {fullTypeName} value, YamlSerializerOptions options)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            Instance.Write(writer, value, options);");
+        sb.AppendLine("        }");
+        sb.AppendLine();
         
         // Read method
         GenerateReadMethod(sb, type, allTypes, compilation);
@@ -3634,11 +3742,23 @@ internal sealed class TypeToGenerate
     /// </summary>
     public PolymorphicInfo? PolymorphicConfig { get; }
 
-    public TypeToGenerate(INamedTypeSymbol symbol, PropertyOrderingMode? propertyOrdering = null, PolymorphicInfo? polymorphicConfig = null)
+    /// <summary>
+    /// The custom converter type specified via [YamlConverter] attribute on the type.
+    /// When set, the generator creates static ReadCore/WriteCore methods and wires up
+    /// the GeneratedRead/GeneratedWrite delegates on the custom converter.
+    /// </summary>
+    public INamedTypeSymbol? CustomConverterType { get; }
+
+    public TypeToGenerate(
+        INamedTypeSymbol symbol, 
+        PropertyOrderingMode? propertyOrdering = null, 
+        PolymorphicInfo? polymorphicConfig = null,
+        INamedTypeSymbol? customConverterType = null)
     {
         Symbol = symbol;
         PropertyOrdering = propertyOrdering;
         PolymorphicConfig = polymorphicConfig;
+        CustomConverterType = customConverterType;
     }
 }
 
