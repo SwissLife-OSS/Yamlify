@@ -428,9 +428,9 @@ Yamlify.Serialization.YamlConstructorAttribute.YamlConstructorAttribute() -> voi
 Yamlify.Serialization.YamlConverter
 Yamlify.Serialization.YamlConverter.YamlConverter() -> void
 Yamlify.Serialization.YamlConverter<T>
-Yamlify.Serialization.YamlConverter<T>.GeneratedRead.get -> Yamlify.Serialization.YamlDeserializeFunc<T>?
+Yamlify.Serialization.YamlConverter<T>.GeneratedRead.get -> Yamlify.Serialization.YamlDeserializeFunc<T>!
 Yamlify.Serialization.YamlConverter<T>.GeneratedRead.init -> void
-Yamlify.Serialization.YamlConverter<T>.GeneratedWrite.get -> Yamlify.Serialization.YamlSerializeAction<T>?
+Yamlify.Serialization.YamlConverter<T>.GeneratedWrite.get -> Yamlify.Serialization.YamlSerializeAction<T>!
 Yamlify.Serialization.YamlConverter<T>.GeneratedWrite.init -> void
 Yamlify.Serialization.YamlConverter<T>.YamlConverter() -> void
 Yamlify.Serialization.YamlConverterAttribute

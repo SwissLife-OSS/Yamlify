@@ -48,7 +48,7 @@ public abstract class YamlConverter<T> : YamlConverter
     public abstract void Write(Utf8YamlWriter writer, T value, YamlSerializerOptions options);
 
     /// <summary>
-    /// Gets or sets a delegate to the source-generated deserialization logic.
+    /// Gets a delegate to the source-generated deserialization logic.
     /// This allows custom converters to delegate to the generated code for standard deserialization
     /// while handling special cases (e.g., legacy format migration) themselves.
     /// </summary>
@@ -63,14 +63,26 @@ public abstract class YamlConverter<T> : YamlConverter
     ///         return new MyType(reader.GetBoolean());
     ///     
     ///     // Delegate to generated code for standard format
-    ///     return GeneratedRead!(ref reader, options);
+    ///     return GeneratedRead(ref reader, options);
     /// }
     /// </code>
     /// </remarks>
-    public YamlDeserializeFunc<T>? GeneratedRead { get; init; }
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when this property is accessed but the source generator hasn't set it up.
+    /// This typically happens if the type doesn't have a <see cref="YamlConverterAttribute"/>
+    /// or isn't registered with a <see cref="YamlSerializerContext"/>.
+    /// </exception>
+    public YamlDeserializeFunc<T> GeneratedRead
+    {
+        get => _generatedRead ?? throw new InvalidOperationException(
+            $"GeneratedRead has not been initialized for {GetType().Name}. " +
+            $"Ensure the type has [YamlConverter] attribute and is registered in a YamlSerializerContext.");
+        init => _generatedRead = value;
+    }
+    private YamlDeserializeFunc<T>? _generatedRead;
 
     /// <summary>
-    /// Gets or sets a delegate to the source-generated serialization logic.
+    /// Gets a delegate to the source-generated serialization logic.
     /// This allows custom converters to delegate to the generated code for standard serialization
     /// while performing custom pre/post processing.
     /// </summary>
@@ -84,11 +96,23 @@ public abstract class YamlConverter<T> : YamlConverter
     ///     LogWrite(value);
     ///     
     ///     // Delegate to generated code
-    ///     GeneratedWrite!(writer, value, options);
+    ///     GeneratedWrite(writer, value, options);
     /// }
     /// </code>
     /// </remarks>
-    public YamlSerializeAction<T>? GeneratedWrite { get; init; }
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when this property is accessed but the source generator hasn't set it up.
+    /// This typically happens if the type doesn't have a <see cref="YamlConverterAttribute"/>
+    /// or isn't registered with a <see cref="YamlSerializerContext"/>.
+    /// </exception>
+    public YamlSerializeAction<T> GeneratedWrite
+    {
+        get => _generatedWrite ?? throw new InvalidOperationException(
+            $"GeneratedWrite has not been initialized for {GetType().Name}. " +
+            $"Ensure the type has [YamlConverter] attribute and is registered in a YamlSerializerContext.");
+        init => _generatedWrite = value;
+    }
+    private YamlSerializeAction<T>? _generatedWrite;
 }
 
 /// <summary>
