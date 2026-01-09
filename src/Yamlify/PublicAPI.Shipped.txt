@@ -428,6 +428,10 @@ Yamlify.Serialization.YamlConstructorAttribute.YamlConstructorAttribute() -> voi
 Yamlify.Serialization.YamlConverter
 Yamlify.Serialization.YamlConverter.YamlConverter() -> void
 Yamlify.Serialization.YamlConverter<T>
+Yamlify.Serialization.YamlConverter<T>.GeneratedRead.get -> Yamlify.Serialization.YamlDeserializeFunc<T>?
+Yamlify.Serialization.YamlConverter<T>.GeneratedRead.init -> void
+Yamlify.Serialization.YamlConverter<T>.GeneratedWrite.get -> Yamlify.Serialization.YamlSerializeAction<T>?
+Yamlify.Serialization.YamlConverter<T>.GeneratedWrite.init -> void
 Yamlify.Serialization.YamlConverter<T>.YamlConverter() -> void
 Yamlify.Serialization.YamlConverterAttribute
 Yamlify.Serialization.YamlConverterAttribute.ConverterType.get -> System.Type!
@@ -438,6 +442,13 @@ Yamlify.Serialization.YamlDerivedTypeAttribute
 Yamlify.Serialization.YamlDerivedTypeAttribute.DerivedType.get -> System.Type!
 Yamlify.Serialization.YamlDerivedTypeAttribute.TypeDiscriminator.get -> string?
 Yamlify.Serialization.YamlDerivedTypeAttribute.YamlDerivedTypeAttribute(System.Type! derivedType, string? typeDiscriminator = null) -> void
+Yamlify.Serialization.YamlDerivedTypeAttribute<T>
+Yamlify.Serialization.YamlDerivedTypeAttribute<T>.YamlDerivedTypeAttribute(string? typeDiscriminator = null) -> void
+Yamlify.Serialization.YamlDerivedTypeMappingAttribute<TBase, TDerived>
+Yamlify.Serialization.YamlDerivedTypeMappingAttribute<TBase, TDerived>.BaseType.get -> System.Type!
+Yamlify.Serialization.YamlDerivedTypeMappingAttribute<TBase, TDerived>.DerivedType.get -> System.Type!
+Yamlify.Serialization.YamlDerivedTypeMappingAttribute<TBase, TDerived>.TypeDiscriminator.get -> string?
+Yamlify.Serialization.YamlDerivedTypeMappingAttribute<TBase, TDerived>.YamlDerivedTypeMappingAttribute(string? typeDiscriminator = null) -> void
 Yamlify.Serialization.YamlDeserializeFunc<T>
 Yamlify.Serialization.YamlDiscriminatorMappingAttribute
 Yamlify.Serialization.YamlDiscriminatorMappingAttribute.ConcreteType.get -> System.Type!
@@ -495,6 +506,8 @@ Yamlify.Serialization.YamlSerializableAttribute.Type.get -> System.Type!
 Yamlify.Serialization.YamlSerializableAttribute.TypeDiscriminatorPropertyName.get -> string?
 Yamlify.Serialization.YamlSerializableAttribute.TypeDiscriminatorPropertyName.set -> void
 Yamlify.Serialization.YamlSerializableAttribute.YamlSerializableAttribute(System.Type! type) -> void
+Yamlify.Serialization.YamlSerializableAttribute<T>
+Yamlify.Serialization.YamlSerializableAttribute<T>.YamlSerializableAttribute() -> void
 Yamlify.Serialization.YamlSerializeAction<T>
 Yamlify.Serialization.YamlSerializer
 Yamlify.Serialization.YamlSerializerContext

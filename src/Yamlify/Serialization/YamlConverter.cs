@@ -46,6 +46,49 @@ public abstract class YamlConverter<T> : YamlConverter
     /// <param name="value">The value to convert.</param>
     /// <param name="options">The serializer options.</param>
     public abstract void Write(Utf8YamlWriter writer, T value, YamlSerializerOptions options);
+
+    /// <summary>
+    /// Gets or sets a delegate to the source-generated deserialization logic.
+    /// This allows custom converters to delegate to the generated code for standard deserialization
+    /// while handling special cases (e.g., legacy format migration) themselves.
+    /// </summary>
+    /// <remarks>
+    /// This property is automatically set by the source generator when a custom converter is registered
+    /// via <see cref="YamlConverterAttribute"/>. It enables patterns like:
+    /// <code>
+    /// public override T? Read(ref Utf8YamlReader reader, YamlSerializerOptions options)
+    /// {
+    ///     // Handle legacy format
+    ///     if (reader.TokenType == YamlTokenType.Boolean)
+    ///         return new MyType(reader.GetBoolean());
+    ///     
+    ///     // Delegate to generated code for standard format
+    ///     return GeneratedRead!(ref reader, options);
+    /// }
+    /// </code>
+    /// </remarks>
+    public YamlDeserializeFunc<T>? GeneratedRead { get; init; }
+
+    /// <summary>
+    /// Gets or sets a delegate to the source-generated serialization logic.
+    /// This allows custom converters to delegate to the generated code for standard serialization
+    /// while performing custom pre/post processing.
+    /// </summary>
+    /// <remarks>
+    /// This property is automatically set by the source generator when a custom converter is registered
+    /// via <see cref="YamlConverterAttribute"/>. It enables patterns like:
+    /// <code>
+    /// public override void Write(Utf8YamlWriter writer, T value, YamlSerializerOptions options)
+    /// {
+    ///     // Pre-processing
+    ///     LogWrite(value);
+    ///     
+    ///     // Delegate to generated code
+    ///     GeneratedWrite!(writer, value, options);
+    /// }
+    /// </code>
+    /// </remarks>
+    public YamlSerializeAction<T>? GeneratedWrite { get; init; }
 }
 
 /// <summary>
