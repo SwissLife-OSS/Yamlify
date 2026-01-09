@@ -1787,12 +1787,16 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             var isAbstractType = nestedTypeInfo is not null && nestedTypeInfo.Symbol.IsAbstract;
             var hasSiblingDiscrimination = siblingInfo is not null && siblingInfo.Mappings.Count > 0;
             
+            // If the nested type has a custom converter, don't use IsEmpty - let the custom converter handle everything
+            var hasCustomConverter = nestedTypeInfo?.CustomConverterType is not null;
+            
             var isNestedObjectType = nestedTypeInfo is not null 
                 && nestedTypeInfo.Symbol.TypeKind != TypeKind.Enum
                 && !IsListOrArray(nestedTypeInfo.Symbol, out _, out _) 
                 && !IsDictionary(nestedTypeInfo.Symbol, out _, out _)
                 && (!isPolymorphicBaseType || hasSiblingDiscrimination)  // Allow IsEmpty if we have sibling discrimination
-                && (!isAbstractType || hasSiblingDiscrimination);        // Allow IsEmpty if we have sibling discrimination
+                && (!isAbstractType || hasSiblingDiscrimination)         // Allow IsEmpty if we have sibling discrimination
+                && !hasCustomConverter;                                   // Never use IsEmpty for types with custom converters
             
             if (isNullable)
             {
@@ -1963,9 +1967,20 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         
         if (nestedType is not null)
         {
-            // Use nested converter
-            var nestedConverterName = GetConverterName(nestedType.Symbol);
-            sb.AppendLine($"                        {varName} = new {nestedConverterName}().Read(ref reader, options);");
+            // If the nested type has a custom converter, instantiate it with the generated delegates
+            // This ensures the custom converter's Read method is called (which may handle legacy formats)
+            if (nestedType.CustomConverterType is not null)
+            {
+                var customConverterTypeName = nestedType.CustomConverterType.ToDisplayString();
+                var nestedConverterName = GetConverterName(nestedType.Symbol);
+                sb.AppendLine($"                        {varName} = new {customConverterTypeName} {{ GeneratedRead = {nestedConverterName}.ReadCore, GeneratedWrite = {nestedConverterName}.WriteCore }}.Read(ref reader, options);");
+            }
+            else
+            {
+                // Use nested converter directly
+                var nestedConverterName = GetConverterName(nestedType.Symbol);
+                sb.AppendLine($"                        {varName} = new {nestedConverterName}().Read(ref reader, options);");
+            }
         }
         else if (underlyingTypeStr == "string" || typeStr == "string?")
         {
@@ -2162,19 +2177,31 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         
         if (nestedType is not null)
         {
-            // Use nested converter
+            // Determine which converter to use
             var nestedConverterName = GetConverterName(nestedType.Symbol);
+            string converterInstantiation;
+            if (nestedType.CustomConverterType is not null)
+            {
+                // Use custom converter with generated delegates
+                var customConverterTypeName = nestedType.CustomConverterType.ToDisplayString();
+                converterInstantiation = $"new {customConverterTypeName} {{ GeneratedRead = {nestedConverterName}.ReadCore, GeneratedWrite = {nestedConverterName}.WriteCore }}";
+            }
+            else
+            {
+                converterInstantiation = $"new {nestedConverterName}()";
+            }
+            
             if (propType.IsValueType && !isNullableValueType)
             {
                 // Non-nullable value type - no null check needed
-                sb.AppendLine($"{indent}new {nestedConverterName}().Write(writer, value.{propName}, options);");
+                sb.AppendLine($"{indent}{converterInstantiation}.Write(writer, value.{propName}, options);");
             }
             else if (isNullableValueType)
             {
                 // Nullable value type - need null check and .Value access
                 sb.AppendLine($"{indent}if (value.{propName}.HasValue)");
                 sb.AppendLine($"{indent}{{");
-                sb.AppendLine($"{indent2}new {nestedConverterName}().Write(writer, value.{propName}.Value, options);");
+                sb.AppendLine($"{indent2}{converterInstantiation}.Write(writer, value.{propName}.Value, options);");
                 sb.AppendLine($"{indent}}}");
                 sb.AppendLine($"{indent}else");
                 sb.AppendLine($"{indent}{{");
@@ -2195,7 +2222,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 sb.AppendLine($"{indent}}}");
                 sb.AppendLine($"{indent}else");
                 sb.AppendLine($"{indent}{{");
-                sb.AppendLine($"{indent2}new {nestedConverterName}().Write(writer, value.{propName}, options);");
+                sb.AppendLine($"{indent2}{converterInstantiation}.Write(writer, value.{propName}, options);");
                 sb.AppendLine($"{indent}}}");
             }
         }
