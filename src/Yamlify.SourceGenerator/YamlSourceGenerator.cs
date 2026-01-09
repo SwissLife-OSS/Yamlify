@@ -1787,12 +1787,16 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             var isAbstractType = nestedTypeInfo is not null && nestedTypeInfo.Symbol.IsAbstract;
             var hasSiblingDiscrimination = siblingInfo is not null && siblingInfo.Mappings.Count > 0;
             
+            // Skip IsEmpty for types with custom converters - the custom converter controls all serialization logic
+            var hasCustomConverter = nestedTypeInfo?.CustomConverterType is not null;
+            
             var isNestedObjectType = nestedTypeInfo is not null 
                 && nestedTypeInfo.Symbol.TypeKind != TypeKind.Enum
                 && !IsListOrArray(nestedTypeInfo.Symbol, out _, out _) 
                 && !IsDictionary(nestedTypeInfo.Symbol, out _, out _)
                 && (!isPolymorphicBaseType || hasSiblingDiscrimination)  // Allow IsEmpty if we have sibling discrimination
-                && (!isAbstractType || hasSiblingDiscrimination);        // Allow IsEmpty if we have sibling discrimination
+                && (!isAbstractType || hasSiblingDiscrimination)         // Allow IsEmpty if we have sibling discrimination
+                && !hasCustomConverter;                                  // Never use IsEmpty for types with custom converters
             
             if (isNullable)
             {
