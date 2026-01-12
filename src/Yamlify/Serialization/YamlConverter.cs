@@ -17,6 +17,12 @@ public abstract class YamlConverter
     /// Determines whether this converter can convert the specified type.
     /// </summary>
     public abstract bool CanConvert(Type typeToConvert);
+
+    /// <summary>
+    /// Maximum number of read operations allowed without progress before throwing.
+    /// This prevents infinite loops caused by converters that don't advance the reader.
+    /// </summary>
+    internal const int MaxReadsWithoutProgress = 1000;
 }
 
 /// <summary>
@@ -130,4 +136,46 @@ public abstract class YamlConverterFactory : YamlConverter
     /// <param name="options">The serializer options.</param>
     /// <returns>A converter for the specified type.</returns>
     public abstract YamlConverter? CreateConverter(Type typeToConvert, YamlSerializerOptions options);
+}
+
+/// <summary>
+/// Provides helper methods for safe converter invocation with infinite loop protection.
+/// </summary>
+public static class YamlConverterSafeRead
+{
+    /// <summary>
+    /// Calls a custom converter's Read method with protection against infinite loops.
+    /// Throws if the reader doesn't advance after the call.
+    /// </summary>
+    /// <typeparam name="T">The type being read.</typeparam>
+    /// <param name="converter">The converter to call.</param>
+    /// <param name="reader">The YAML reader.</param>
+    /// <param name="options">The serializer options.</param>
+    /// <returns>The deserialized value.</returns>
+    /// <exception cref="YamlException">Thrown when the converter doesn't advance the reader.</exception>
+    public static T? Read<T>(YamlConverter<T> converter, ref Utf8YamlReader reader, YamlSerializerOptions options)
+    {
+        var positionBefore = reader.BytesConsumed;
+        var tokenBefore = reader.TokenType;
+        var depthBefore = reader.CurrentDepth;
+        
+        var result = converter.Read(ref reader, options);
+        
+        // Check if the reader advanced - either bytes consumed changed, token type changed, or depth changed
+        // This handles cases where the converter consumed tokens that might result in same byte position (rare)
+        var hasAdvanced = reader.BytesConsumed != positionBefore 
+            || reader.TokenType != tokenBefore 
+            || reader.CurrentDepth != depthBefore
+            || reader.TokenType == YamlTokenType.None; // End of document is fine
+        
+        if (!hasAdvanced)
+        {
+            throw new YamlException(
+                $"Custom converter '{converter.GetType().Name}' did not advance the reader. " +
+                $"This will cause an infinite loop. Ensure you call reader.Read() after processing scalar values.",
+                reader.Position);
+        }
+        
+        return result;
+    }
 }

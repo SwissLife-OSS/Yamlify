@@ -332,6 +332,28 @@ public class NestedCustomConverterTests
     }
 
     #endregion
+
+    #region Safety Feature Tests
+
+    [Fact]
+    public void Read_BuggyConverterThatDoesNotAdvanceReader_ThrowsWithHelpfulMessage()
+    {
+        // Arrange - This test demonstrates that Yamlify catches buggy converters
+        // that forget to call reader.Read() after processing scalar values
+        const string yaml = """
+            value: test
+            """;
+
+        // Act & Assert
+        var ex = Assert.Throws<YamlException>(() => 
+            YamlSerializer.Deserialize<BuggyConfigWrapper>(yaml, BuggyConverterTestContext.Default));
+        
+        Assert.Contains("did not advance the reader", ex.Message);
+        Assert.Contains("BuggyConverter", ex.Message);
+        Assert.Contains("reader.Read()", ex.Message);
+    }
+
+    #endregion
 }
 
 #region Models
@@ -424,5 +446,47 @@ public class ParentAppConfig
 [YamlSerializable<AppWithStages>]
 [YamlSerializable<ParentAppConfig>]
 public partial class NestedCustomConverterTestContext : YamlSerializerContext { }
+
+#endregion
+
+#region Buggy Converter Test Models
+
+/// <summary>
+/// A deliberately buggy converter that forgets to call reader.Read().
+/// This demonstrates the safety feature that catches such bugs.
+/// </summary>
+public class BuggyConverter : YamlConverter<BuggyConfig>
+{
+    public override BuggyConfig? Read(ref Utf8YamlReader reader, YamlSerializerOptions options)
+    {
+        if (reader.TokenType == YamlTokenType.Scalar)
+        {
+            // BUG: Forgot to call reader.Read() after reading the scalar!
+            // This would cause an infinite loop without the safety check.
+            return new BuggyConfig { Value = reader.GetString() };
+        }
+        return GeneratedRead(ref reader, options);
+    }
+
+    public override void Write(Utf8YamlWriter writer, BuggyConfig value, YamlSerializerOptions options)
+    {
+        GeneratedWrite(writer, value, options);
+    }
+}
+
+[YamlConverter(typeof(BuggyConverter))]
+public class BuggyConfig
+{
+    public string? Value { get; set; }
+}
+
+public class BuggyConfigWrapper
+{
+    public BuggyConfig? Value { get; set; }
+}
+
+[YamlSerializable<BuggyConfig>]
+[YamlSerializable<BuggyConfigWrapper>]
+public partial class BuggyConverterTestContext : YamlSerializerContext { }
 
 #endregion

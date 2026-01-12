@@ -2006,7 +2006,8 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             {
                 var customConverterTypeName = nestedType.CustomConverterType.ToDisplayString();
                 var nestedConverterName = GetConverterName(nestedType.Symbol);
-                sb.AppendLine($"                        {varName} = new {customConverterTypeName} {{ GeneratedRead = {nestedConverterName}.ReadCore, GeneratedWrite = {nestedConverterName}.WriteCore }}.Read(ref reader, options);");
+                // Use YamlConverterSafeRead.Read to protect against infinite loops from buggy converters
+                sb.AppendLine($"                        {varName} = global::Yamlify.Serialization.YamlConverterSafeRead.Read(new {customConverterTypeName} {{ GeneratedRead = {nestedConverterName}.ReadCore, GeneratedWrite = {nestedConverterName}.WriteCore }}, ref reader, options);");
             }
             else
             {
@@ -3312,7 +3313,8 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             {
                 var customConverterTypeName = nestedType.CustomConverterType.ToDisplayString();
                 var nestedConverterName = GetConverterName(nestedType.Symbol);
-                sb.AppendLine($"{indent}var {varName} = new {customConverterTypeName} {{ GeneratedRead = {nestedConverterName}.ReadCore, GeneratedWrite = {nestedConverterName}.WriteCore }}.Read(ref reader, options);");
+                // Use YamlConverterSafeRead.Read to protect against infinite loops from buggy converters
+                sb.AppendLine($"{indent}var {varName} = global::Yamlify.Serialization.YamlConverterSafeRead.Read(new {customConverterTypeName} {{ GeneratedRead = {nestedConverterName}.ReadCore, GeneratedWrite = {nestedConverterName}.WriteCore }}, ref reader, options);");
             }
             else
             {
