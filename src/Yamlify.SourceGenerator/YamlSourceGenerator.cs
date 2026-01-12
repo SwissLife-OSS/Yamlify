@@ -2001,9 +2001,19 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         
         if (nestedType is not null)
         {
-            // Use nested converter
-            var nestedConverterName = GetConverterName(nestedType.Symbol);
-            sb.AppendLine($"                        {varName} = new {nestedConverterName}().Read(ref reader, options);");
+            // Check if the nested type has a custom converter - if so, use it with GeneratedRead wired up
+            if (nestedType.CustomConverterType is not null)
+            {
+                var customConverterTypeName = nestedType.CustomConverterType.ToDisplayString();
+                var nestedConverterName = GetConverterName(nestedType.Symbol);
+                sb.AppendLine($"                        {varName} = new {customConverterTypeName} {{ GeneratedRead = {nestedConverterName}.ReadCore, GeneratedWrite = {nestedConverterName}.WriteCore }}.Read(ref reader, options);");
+            }
+            else
+            {
+                // Use generated nested converter
+                var nestedConverterName = GetConverterName(nestedType.Symbol);
+                sb.AppendLine($"                        {varName} = new {nestedConverterName}().Read(ref reader, options);");
+            }
         }
         else if (underlyingTypeStr == "string" || typeStr == "string?")
         {
@@ -2200,19 +2210,30 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         
         if (nestedType is not null)
         {
-            // Use nested converter
+            // Check if the nested type has a custom converter - if so, use it with GeneratedWrite wired up
             var nestedConverterName = GetConverterName(nestedType.Symbol);
+            string converterExpr;
+            if (nestedType.CustomConverterType is not null)
+            {
+                var customConverterTypeName = nestedType.CustomConverterType.ToDisplayString();
+                converterExpr = $"new {customConverterTypeName} {{ GeneratedRead = {nestedConverterName}.ReadCore, GeneratedWrite = {nestedConverterName}.WriteCore }}";
+            }
+            else
+            {
+                converterExpr = $"new {nestedConverterName}()";
+            }
+            
             if (propType.IsValueType && !isNullableValueType)
             {
                 // Non-nullable value type - no null check needed
-                sb.AppendLine($"{indent}new {nestedConverterName}().Write(writer, value.{propName}, options);");
+                sb.AppendLine($"{indent}{converterExpr}.Write(writer, value.{propName}, options);");
             }
             else if (isNullableValueType)
             {
                 // Nullable value type - need null check and .Value access
                 sb.AppendLine($"{indent}if (value.{propName}.HasValue)");
                 sb.AppendLine($"{indent}{{");
-                sb.AppendLine($"{indent2}new {nestedConverterName}().Write(writer, value.{propName}.Value, options);");
+                sb.AppendLine($"{indent2}{converterExpr}.Write(writer, value.{propName}.Value, options);");
                 sb.AppendLine($"{indent}}}");
                 sb.AppendLine($"{indent}else");
                 sb.AppendLine($"{indent}{{");
@@ -2233,7 +2254,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 sb.AppendLine($"{indent}}}");
                 sb.AppendLine($"{indent}else");
                 sb.AppendLine($"{indent}{{");
-                sb.AppendLine($"{indent2}new {nestedConverterName}().Write(writer, value.{propName}, options);");
+                sb.AppendLine($"{indent2}{converterExpr}.Write(writer, value.{propName}, options);");
                 sb.AppendLine($"{indent}}}");
             }
         }
@@ -3286,8 +3307,18 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         
         if (nestedType is not null)
         {
-            var nestedConverterName = GetConverterName(nestedType.Symbol);
-            sb.AppendLine($"{indent}var {varName} = new {nestedConverterName}().Read(ref reader, options);");
+            // Check if the nested type has a custom converter - if so, use it with GeneratedRead wired up
+            if (nestedType.CustomConverterType is not null)
+            {
+                var customConverterTypeName = nestedType.CustomConverterType.ToDisplayString();
+                var nestedConverterName = GetConverterName(nestedType.Symbol);
+                sb.AppendLine($"{indent}var {varName} = new {customConverterTypeName} {{ GeneratedRead = {nestedConverterName}.ReadCore, GeneratedWrite = {nestedConverterName}.WriteCore }}.Read(ref reader, options);");
+            }
+            else
+            {
+                var nestedConverterName = GetConverterName(nestedType.Symbol);
+                sb.AppendLine($"{indent}var {varName} = new {nestedConverterName}().Read(ref reader, options);");
+            }
         }
         else if (typeStr == "string" || typeStr == "string?")
         {
@@ -3517,11 +3548,23 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         
         if (nestedType is not null)
         {
+            // Check if the nested type has a custom converter - if so, use it with GeneratedWrite wired up
             var nestedConverterName = GetConverterName(nestedType.Symbol);
+            string converterExpr;
+            if (nestedType.CustomConverterType is not null)
+            {
+                var customConverterTypeName = nestedType.CustomConverterType.ToDisplayString();
+                converterExpr = $"new {customConverterTypeName} {{ GeneratedRead = {nestedConverterName}.ReadCore, GeneratedWrite = {nestedConverterName}.WriteCore }}";
+            }
+            else
+            {
+                converterExpr = $"new {nestedConverterName}()";
+            }
+            
             // Value types (enums, structs) can't be null
             if (elementType.IsValueType)
             {
-                sb.AppendLine($"{indent}new {nestedConverterName}().Write(writer, {varName}, options);");
+                sb.AppendLine($"{indent}{converterExpr}.Write(writer, {varName}, options);");
             }
             else
             {
@@ -3536,7 +3579,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 sb.AppendLine($"{indent}}}");
                 sb.AppendLine($"{indent}else");
                 sb.AppendLine($"{indent}{{");
-                sb.AppendLine($"{indent}    new {nestedConverterName}().Write(writer, {varName}, options);");
+                sb.AppendLine($"{indent}    {converterExpr}.Write(writer, {varName}, options);");
                 sb.AppendLine($"{indent}}}");
             }
         }
