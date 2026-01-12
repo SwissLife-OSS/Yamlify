@@ -602,3 +602,5 @@ Yamlify.Serialization.YamlTypeInfo<T>.SerializeAction.init -> void
 Yamlify.Serialization.YamlTypeInfo<T>.YamlTypeInfo(Yamlify.Serialization.YamlConverter<T>? converter, System.Collections.Generic.IReadOnlyList<Yamlify.Serialization.YamlPropertyInfo!>? properties, Yamlify.Serialization.YamlSerializerOptions? options = null) -> void
 Yamlify.Serialization.YamlTypeInfo<T>.YamlTypeInfo(Yamlify.Serialization.YamlConverter<T>? converter, Yamlify.Serialization.YamlSerializerOptions? options = null) -> void
 Yamlify.Serialization.YamlTypeInfo<T>.YamlTypeInfo(Yamlify.Serialization.YamlSerializerOptions? options = null) -> void
+static Yamlify.Serialization.YamlConverterSafeRead.Read<T>(Yamlify.Serialization.YamlConverter<T>! converter, ref Yamlify.Utf8YamlReader reader, Yamlify.Serialization.YamlSerializerOptions! options) -> T?
+Yamlify.Serialization.YamlConverterSafeRead
