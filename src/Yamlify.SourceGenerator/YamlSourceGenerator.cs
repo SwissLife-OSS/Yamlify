@@ -1750,6 +1750,14 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 }
             }
             
+            // Check for YamlIgnore with conditional conditions (WhenWritingNull, WhenWritingDefault)
+            var writeIgnoreCondition = GetWriteIgnoreCondition(prop);
+            if (writeIgnoreCondition == IgnoreCondition.Always)
+            {
+                // Already filtered out in the allProperties list, but double-check
+                continue;
+            }
+            
             // Check for sibling discriminator
             // For dictionaries, we want sibling discriminator to apply to the dictionary values
             // For regular lists/arrays, sibling discriminator doesn't make sense (each element should determine its own type)
@@ -1825,8 +1833,20 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                     }
                 }
                 
-                // Wrap nullable properties with IgnoreNullValues and IgnoreEmptyObjects checks
-                sb.AppendLine($"            if (!options.IgnoreNullValues || ({string.Join(" && ", conditions)}))");
+                // Handle YamlIgnore conditions:
+                // - WhenWritingNull: Skip if null (property-level, always respected)
+                // - WhenWritingDefault: Skip if null (for nullable types, null is the default)
+                if (writeIgnoreCondition == IgnoreCondition.WhenWritingNull || 
+                    writeIgnoreCondition == IgnoreCondition.WhenWritingDefault)
+                {
+                    // Always skip if null, regardless of options.IgnoreNullValues
+                    sb.AppendLine($"            if ({string.Join(" && ", conditions)})");
+                }
+                else
+                {
+                    // Wrap nullable properties with IgnoreNullValues and IgnoreEmptyObjects checks
+                    sb.AppendLine($"            if (!options.IgnoreNullValues || ({string.Join(" && ", conditions)}))");
+                }
                 sb.AppendLine("            {");
                 sb.AppendLine($"                writer.WritePropertyName({propertyNameCode});");
                 GeneratePropertyWrite(sb, propName, prop.Type, allTypes, "    ", siblingInfo);
@@ -1834,9 +1854,23 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             }
             else
             {
-                // Non-nullable properties are always written
-                sb.AppendLine($"            writer.WritePropertyName({propertyNameCode});");
-                GeneratePropertyWrite(sb, propName, prop.Type, allTypes, "", siblingInfo);
+                // Non-nullable properties - check for WhenWritingDefault
+                if (writeIgnoreCondition == IgnoreCondition.WhenWritingDefault)
+                {
+                    // Skip if value equals default for the type
+                    var defaultValue = GetDefaultValue(prop.Type);
+                    sb.AppendLine($"            if (!EqualityComparer<{prop.Type.ToDisplayString()}>.Default.Equals(value.{propName}, {defaultValue}))");
+                    sb.AppendLine("            {");
+                    sb.AppendLine($"                writer.WritePropertyName({propertyNameCode});");
+                    GeneratePropertyWrite(sb, propName, prop.Type, allTypes, "    ", siblingInfo);
+                    sb.AppendLine("            }");
+                }
+                else
+                {
+                    // Non-nullable properties are always written
+                    sb.AppendLine($"            writer.WritePropertyName({propertyNameCode});");
+                    GeneratePropertyWrite(sb, propName, prop.Type, allTypes, "", siblingInfo);
+                }
             }
             sb.AppendLine();
         }
@@ -2537,18 +2571,74 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         return null;
     }
 
-    private static bool ShouldIgnoreProperty(IPropertySymbol property)
+    /// <summary>
+    /// Represents the YamlIgnoreCondition enum values from the runtime.
+    /// </summary>
+    private enum IgnoreCondition
     {
-        // Check for YamlIgnore attribute
+        Always = 0,
+        WhenWritingNull = 1,
+        WhenWritingDefault = 2,
+        Never = 3
+    }
+
+    /// <summary>
+    /// Gets the ignore condition for a property, or null if no YamlIgnore attribute is present.
+    /// </summary>
+    private static IgnoreCondition? GetIgnoreCondition(IPropertySymbol property)
+    {
         foreach (var attr in property.GetAttributes())
         {
             if (attr.AttributeClass?.Name == "YamlIgnoreAttribute" ||
                 attr.AttributeClass?.ToDisplayString() == "Yamlify.Serialization.YamlIgnoreAttribute")
             {
-                return true;
+                // Check for the Condition named argument
+                foreach (var namedArg in attr.NamedArguments)
+                {
+                    if (namedArg.Key == "Condition" && namedArg.Value.Value is int conditionValue)
+                    {
+                        return (IgnoreCondition)conditionValue;
+                    }
+                }
+                // Default is Always if Condition is not specified
+                return IgnoreCondition.Always;
             }
         }
-        return false;
+        return null;
+    }
+
+    /// <summary>
+    /// Determines if a property should be ignored during deserialization (reading).
+    /// Only properties with YamlIgnore(Condition = Always) are ignored during reading.
+    /// Properties with WhenWritingNull/WhenWritingDefault are still read but may be skipped during writing.
+    /// </summary>
+    private static bool ShouldIgnorePropertyForReading(IPropertySymbol property)
+    {
+        var condition = GetIgnoreCondition(property);
+        return condition == IgnoreCondition.Always;
+    }
+
+    /// <summary>
+    /// Determines if a property should be ignored during serialization (writing).
+    /// Returns the ignore condition, or null if the property should always be written.
+    /// </summary>
+    private static IgnoreCondition? GetWriteIgnoreCondition(IPropertySymbol property)
+    {
+        var condition = GetIgnoreCondition(property);
+        if (condition == IgnoreCondition.Never)
+        {
+            return null; // Never ignore = always write
+        }
+        return condition;
+    }
+
+    /// <summary>
+    /// Legacy method for backward compatibility - use ShouldIgnorePropertyForReading for reading.
+    /// </summary>
+    private static bool ShouldIgnoreProperty(IPropertySymbol property)
+    {
+        // For reading, only ignore if condition is Always
+        return ShouldIgnorePropertyForReading(property);
     }
 
     private static int GetPropertyOrder(IPropertySymbol property)
