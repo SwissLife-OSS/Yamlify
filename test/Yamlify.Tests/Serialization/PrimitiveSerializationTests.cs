@@ -382,6 +382,237 @@ public class PrimitiveSerializationTests
         Assert.NotNull(yaml);
     }
 
+    [Fact]
+    public void DeserializeMultilinePlainScalar_FoldsToSingleLine()
+    {
+        // YAML multiline plain scalar - line break + indentation should fold to single space
+        var yaml = """
+            name: This is a long description that spans
+              multiple lines in the YAML file
+            value: 42
+            is-active: true
+            """;
+
+        var obj = YamlSerializer.Deserialize(yaml, TestSerializerContext.Default.SimpleClass);
+
+        Assert.NotNull(obj);
+        // Line breaks should be folded into single spaces per YAML spec
+        Assert.Equal("This is a long description that spans multiple lines in the YAML file", obj.Name);
+    }
+
+    [Fact]
+    public void DeserializeSingleLinePlainScalar_RemainsUnchanged()
+    {
+        var yaml = """
+            name: Simple single line value
+            value: 42
+            is-active: true
+            """;
+
+        var obj = YamlSerializer.Deserialize(yaml, TestSerializerContext.Default.SimpleClass);
+
+        Assert.NotNull(obj);
+        Assert.Equal("Simple single line value", obj.Name);
+    }
+
+    [Fact]
+    public void DeserializeMultilinePlainScalar_WithMultipleContinuationLines()
+    {
+        // Three continuation lines should all fold to spaces
+        var yaml = """
+            name: First line
+              second line
+              third line
+              fourth line
+            value: 42
+            is-active: true
+            """;
+
+        var obj = YamlSerializer.Deserialize(yaml, TestSerializerContext.Default.SimpleClass);
+
+        Assert.NotNull(obj);
+        Assert.Equal("First line second line third line fourth line", obj.Name);
+    }
+
+    [Fact]
+    public void DeserializeMultilinePlainScalar_WithBlankLines_PreservesNewlines()
+    {
+        // Blank lines (multiple consecutive line breaks) should preserve newlines
+        var yaml = """
+            name: First paragraph
+
+              Second paragraph after blank line
+            value: 42
+            is-active: true
+            """;
+
+        var obj = YamlSerializer.Deserialize(yaml, TestSerializerContext.Default.SimpleClass);
+
+        Assert.NotNull(obj);
+        // One blank line = two line breaks = one preserved newline + one folded space
+        Assert.Contains("\n", obj.Name);
+    }
+
+    [Fact]
+    public void DeserializeSingleQuotedMultilineScalar_FoldsToSingleLine()
+    {
+        var yaml = """
+            name: 'This is a single quoted
+              multiline string'
+            value: 42
+            is-active: true
+            """;
+
+        var obj = YamlSerializer.Deserialize(yaml, TestSerializerContext.Default.SimpleClass);
+
+        Assert.NotNull(obj);
+        Assert.Equal("This is a single quoted multiline string", obj.Name);
+    }
+
+    [Fact]
+    public void DeserializeSingleQuotedScalar_WithEscapedQuotes()
+    {
+        var yaml = """
+            name: 'It''s a test with ''quotes'''
+            value: 42
+            is-active: true
+            """;
+
+        var obj = YamlSerializer.Deserialize(yaml, TestSerializerContext.Default.SimpleClass);
+
+        Assert.NotNull(obj);
+        Assert.Equal("It's a test with 'quotes'", obj.Name);
+    }
+
+    [Fact]
+    public void DeserializeSingleQuotedMultiline_WithEscapedQuotes()
+    {
+        var yaml = """
+            name: 'First line with ''quote''
+              and second line'
+            value: 42
+            is-active: true
+            """;
+
+        var obj = YamlSerializer.Deserialize(yaml, TestSerializerContext.Default.SimpleClass);
+
+        Assert.NotNull(obj);
+        Assert.Equal("First line with 'quote' and second line", obj.Name);
+    }
+
+    [Fact]
+    public void DeserializeDoubleQuotedMultilineScalar_FoldsToSingleLine()
+    {
+        var yaml = """
+            name: "This is a double quoted
+              multiline string"
+            value: 42
+            is-active: true
+            """;
+
+        var obj = YamlSerializer.Deserialize(yaml, TestSerializerContext.Default.SimpleClass);
+
+        Assert.NotNull(obj);
+        Assert.Equal("This is a double quoted multiline string", obj.Name);
+    }
+
+    [Fact]
+    public void DeserializePlainScalar_VeryLongSingleLine_NoUnwantedWrapping()
+    {
+        // A very long single line should remain as-is, no line breaks inserted
+        var longValue = new string('x', 200);
+        var yaml = $"""
+            name: {longValue}
+            value: 42
+            is-active: true
+            """;
+
+        var obj = YamlSerializer.Deserialize(yaml, TestSerializerContext.Default.SimpleClass);
+
+        Assert.NotNull(obj);
+        Assert.Equal(longValue, obj.Name);
+        Assert.DoesNotContain("\n", obj.Name);
+        Assert.DoesNotContain("\r", obj.Name);
+    }
+
+    [Fact]
+    public void DeserializePlainScalar_WithTabsInContinuation_ThrowsException()
+    {
+        // YAML spec forbids tabs for indentation - parser should throw
+        var yaml = "name: First line\n\tsecond with tab\nvalue: 42\nis-active: true";
+
+        var exception = Assert.Throws<YamlException>(() =>
+            YamlSerializer.Deserialize(yaml, TestSerializerContext.Default.SimpleClass));
+
+        Assert.Contains("Tabs are not allowed", exception.Message);
+    }
+
+    [Fact]
+    public void DeserializePlainScalar_SingleWordPerLine()
+    {
+        var yaml = """
+            name: word1
+              word2
+              word3
+            value: 42
+            is-active: true
+            """;
+
+        var obj = YamlSerializer.Deserialize(yaml, TestSerializerContext.Default.SimpleClass);
+
+        Assert.NotNull(obj);
+        Assert.Equal("word1 word2 word3", obj.Name);
+    }
+
+    [Fact]
+    public void DeserializePlainScalar_WithLeadingSpacesOnContinuation()
+    {
+        // Extra leading spaces beyond minimum indent should be stripped for folding
+        var yaml = """
+            name: Start
+                  deeply indented continuation
+            value: 42
+            is-active: true
+            """;
+
+        var obj = YamlSerializer.Deserialize(yaml, TestSerializerContext.Default.SimpleClass);
+
+        Assert.NotNull(obj);
+        // All leading whitespace on continuation is consumed, single space inserted
+        Assert.Equal("Start deeply indented continuation", obj.Name);
+    }
+
+    [Fact]
+    public void DeserializePlainScalar_EmptyValue_ReturnsNull()
+    {
+        var yaml = """
+            name:
+            value: 42
+            is-active: true
+            """;
+
+        var obj = YamlSerializer.Deserialize(yaml, TestSerializerContext.Default.SimpleClass);
+
+        Assert.NotNull(obj);
+        Assert.Null(obj.Name);
+    }
+
+    [Fact]
+    public void DeserializePlainScalar_OnlyWhitespace_ReturnsNull()
+    {
+        var yaml = """
+            name:   
+            value: 42
+            is-active: true
+            """;
+
+        var obj = YamlSerializer.Deserialize(yaml, TestSerializerContext.Default.SimpleClass);
+
+        Assert.NotNull(obj);
+        // Trailing whitespace after colon with no content = null
+        Assert.Null(obj.Name);
+    }
+
     #endregion
 
     #region Extreme Int Values
