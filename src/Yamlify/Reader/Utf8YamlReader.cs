@@ -273,6 +273,13 @@ public ref partial struct Utf8YamlReader
             return DecodeDoubleQuotedString(_valueSpan);
         }
 
+        // For plain and single-quoted scalars, fold line breaks into spaces
+        // Per YAML 1.2 spec: line breaks in plain/single-quoted scalars are folded
+        if (_scalarStyle is ScalarStyle.Plain or ScalarStyle.SingleQuoted)
+        {
+            return FoldMultilineScalar(_valueSpan, _scalarStyle);
+        }
+
         return System.Text.Encoding.UTF8.GetString(_valueSpan);
     }
 
@@ -281,8 +288,18 @@ public ref partial struct Utf8YamlReader
     /// </summary>
     private static string DecodeDoubleQuotedString(ReadOnlySpan<byte> content)
     {
-        // Fast path: no escapes
-        if (content.IndexOf((byte)'\\') < 0)
+        // Fast path: no escapes and no line breaks
+        bool hasEscapeOrLineBreak = false;
+        for (int i = 0; i < content.Length; i++)
+        {
+            if (content[i] == (byte)'\\' || content[i] == (byte)'\n' || content[i] == (byte)'\r')
+            {
+                hasEscapeOrLineBreak = true;
+                break;
+            }
+        }
+        
+        if (!hasEscapeOrLineBreak)
         {
             return System.Text.Encoding.UTF8.GetString(content);
         }
@@ -338,8 +355,16 @@ public ref partial struct Utf8YamlReader
                 {
                     pos++;
                 }
-                result.Append(' '); // Single newlines become spaces in double-quoted strings
                 pos++;
+                
+                // Skip leading whitespace on continuation line (folding)
+                while (pos < content.Length && (content[pos] == (byte)' ' || content[pos] == (byte)'\t'))
+                {
+                    pos++;
+                }
+                
+                // Single newline + whitespace folds to single space
+                result.Append(' ');
             }
             else
             {
@@ -382,6 +407,160 @@ public ref partial struct Utf8YamlReader
 
         pos += digits;
         return (char)value;
+    }
+
+    /// <summary>
+    /// Folds multiline plain and single-quoted scalars according to YAML spec.
+    /// Line breaks followed by whitespace are folded into single spaces.
+    /// Multiple consecutive line breaks preserve one newline per empty line.
+    /// </summary>
+    private static string FoldMultilineScalar(ReadOnlySpan<byte> content, ScalarStyle style)
+    {
+        // Fast path: no line breaks means no folding needed
+        bool hasLineBreak = false;
+        for (int i = 0; i < content.Length; i++)
+        {
+            if (content[i] == (byte)'\n' || content[i] == (byte)'\r')
+            {
+                hasLineBreak = true;
+                break;
+            }
+        }
+
+        if (!hasLineBreak)
+        {
+            // For single-quoted, still need to handle escaped quotes
+            if (style == ScalarStyle.SingleQuoted)
+            {
+                return DecodeSingleQuotedString(content);
+            }
+            return System.Text.Encoding.UTF8.GetString(content);
+        }
+
+        var result = new System.Text.StringBuilder(content.Length);
+        int pos = 0;
+
+        while (pos < content.Length)
+        {
+            byte current = content[pos];
+
+            if (current == (byte)'\r' || current == (byte)'\n')
+            {
+                // Count consecutive line breaks (for preserving blank lines)
+                int lineBreakCount = 0;
+                while (pos < content.Length && (content[pos] == (byte)'\r' || content[pos] == (byte)'\n'))
+                {
+                    if (content[pos] == (byte)'\r')
+                    {
+                        pos++;
+                        if (pos < content.Length && content[pos] == (byte)'\n')
+                        {
+                            pos++;
+                        }
+                    }
+                    else
+                    {
+                        pos++;
+                    }
+                    lineBreakCount++;
+                }
+
+                // Skip leading whitespace on continuation line
+                while (pos < content.Length && (content[pos] == (byte)' ' || content[pos] == (byte)'\t'))
+                {
+                    pos++;
+                }
+
+                // Apply folding rules:
+                // - Single line break + whitespace = single space
+                // - Multiple line breaks = preserve (n-1) newlines, then fold last to space
+                if (lineBreakCount == 1)
+                {
+                    // Single line break folds to space
+                    result.Append(' ');
+                }
+                else
+                {
+                    // Multiple line breaks: preserve blank lines, then fold
+                    for (int i = 0; i < lineBreakCount - 1; i++)
+                    {
+                        result.Append('\n');
+                    }
+                    result.Append(' ');
+                }
+            }
+            else if (style == ScalarStyle.SingleQuoted && current == (byte)'\'' && 
+                     pos + 1 < content.Length && content[pos + 1] == (byte)'\'')
+            {
+                // Escaped single quote in single-quoted string
+                result.Append('\'');
+                pos += 2;
+            }
+            else
+            {
+                result.Append((char)current);
+                pos++;
+            }
+        }
+
+        // Trim trailing space that may have been added from final line break
+        if (result.Length > 0 && result[result.Length - 1] == ' ')
+        {
+            // Only trim if it was from folding, not from actual content
+            // Check if the original ended with a line break
+            int lastIdx = content.Length - 1;
+            while (lastIdx >= 0 && (content[lastIdx] == (byte)' ' || content[lastIdx] == (byte)'\t'))
+            {
+                lastIdx--;
+            }
+            if (lastIdx >= 0 && (content[lastIdx] == (byte)'\n' || content[lastIdx] == (byte)'\r'))
+            {
+                result.Length--;
+            }
+        }
+
+        return result.ToString();
+    }
+
+    /// <summary>
+    /// Decodes a single-quoted string (handles escaped quotes only).
+    /// </summary>
+    private static string DecodeSingleQuotedString(ReadOnlySpan<byte> content)
+    {
+        // Fast path: no escaped quotes
+        bool hasEscapedQuote = false;
+        for (int i = 0; i < content.Length - 1; i++)
+        {
+            if (content[i] == (byte)'\'' && content[i + 1] == (byte)'\'')
+            {
+                hasEscapedQuote = true;
+                break;
+            }
+        }
+
+        if (!hasEscapedQuote)
+        {
+            return System.Text.Encoding.UTF8.GetString(content);
+        }
+
+        var result = new System.Text.StringBuilder(content.Length);
+        int pos = 0;
+
+        while (pos < content.Length)
+        {
+            if (content[pos] == (byte)'\'' && pos + 1 < content.Length && content[pos + 1] == (byte)'\'')
+            {
+                result.Append('\'');
+                pos += 2;
+            }
+            else
+            {
+                result.Append((char)content[pos]);
+                pos++;
+            }
+        }
+
+        return result.ToString();
     }
 
     /// <summary>
