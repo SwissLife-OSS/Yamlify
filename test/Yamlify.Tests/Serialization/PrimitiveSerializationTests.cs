@@ -383,6 +383,117 @@ public class PrimitiveSerializationTests
     }
 
     [Fact]
+    public void SerializeWithMultilineString_UsesLiteralBlockStyle()
+    {
+        var obj = new SimpleClass { Name = "Line1\nLine2\nLine3", Value = 42, IsActive = true };
+
+        var yaml = YamlSerializer.Serialize(obj, TestSerializerContext.Default.SimpleClass);
+
+        // Should use literal block style (|) for multi-line strings, not quoted style
+        Assert.Contains("name: |-", yaml);
+        Assert.Contains("  Line1", yaml);
+        Assert.Contains("  Line2", yaml);
+        Assert.Contains("  Line3", yaml);
+    }
+
+    [Fact]
+    public void SerializeWithMultilineString_WithTrailingNewline_UsesLiteralBlockStyleWithClip()
+    {
+        var obj = new SimpleClass { Name = "Line1\nLine2\n", Value = 42, IsActive = true };
+
+        var yaml = YamlSerializer.Serialize(obj, TestSerializerContext.Default.SimpleClass);
+
+        // Should use literal block style with clip (default, single trailing newline preserved)
+        Assert.Contains("name: |", yaml);
+        Assert.DoesNotContain("name: |-", yaml);
+        Assert.DoesNotContain("name: |+", yaml);
+    }
+
+    [Fact]
+    public void ReadBlockScalarWithStripChomping_NoTrailingNewline()
+    {
+        // Directly test the reader with a block scalar using strip chomping
+        var yaml = """
+            name: |-
+              First line
+              Second line
+              Third line
+            """u8;
+        
+        var reader = new Utf8YamlReader(yaml);
+        string? nameValue = null;
+        while (reader.Read())
+        {
+            if (reader.TokenType == YamlTokenType.Scalar)
+            {
+                var value = reader.GetString();
+                if (value == "name")
+                {
+                    reader.Read(); // move to value
+                    nameValue = reader.GetString();
+                    break;
+                }
+            }
+        }
+        
+        // The strip chomping indicator (-) should remove trailing newlines
+        Assert.Equal("First line\nSecond line\nThird line", nameValue);
+    }
+
+    [Fact]
+    public void ReadBlockScalarWithStripChomping_FollowedByOtherContent()
+    {
+        // Test that strip chomping works when there's more content after the block scalar
+        var yaml = """
+            name: |-
+              First line
+              Second line
+              Third line
+            value: 42
+            """u8;
+        
+        var reader = new Utf8YamlReader(yaml);
+        string? nameValue = null;
+        while (reader.Read())
+        {
+            if (reader.TokenType == YamlTokenType.Scalar)
+            {
+                var value = reader.GetString();
+                if (value == "name")
+                {
+                    reader.Read(); // move to value
+                    nameValue = reader.GetString();
+                    break;
+                }
+            }
+        }
+        
+        // The strip chomping indicator (-) should remove trailing newlines
+        Assert.Equal("First line\nSecond line\nThird line", nameValue);
+    }
+
+    [Fact]
+    public void RoundtripMultilineString_PreservesContent()
+    {
+        var original = new SimpleClass { Name = "First line\nSecond line\nThird line", Value = 42, IsActive = true };
+
+        var yaml = YamlSerializer.Serialize(original, TestSerializerContext.Default.SimpleClass);
+        
+        // The YAML should use |- (strip chomping) since the string doesn't end with newline
+        Assert.Contains("name: |-", yaml);
+        
+        // Make sure the generated YAML looks correct - check for proper indentation
+        Assert.Contains("  First line", yaml);
+        Assert.Contains("  Second line", yaml);
+        Assert.Contains("  Third line", yaml);
+        
+        var deserialized = YamlSerializer.Deserialize(yaml, TestSerializerContext.Default.SimpleClass);
+
+        Assert.NotNull(deserialized);
+        Assert.Equal(original.Name, deserialized.Name);
+    }
+
+    [Fact]
     public void DeserializeMultilinePlainScalar_FoldsToSingleLine()
     {
         // YAML multiline plain scalar - line break + indentation should fold to single space

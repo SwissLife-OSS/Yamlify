@@ -2157,6 +2157,9 @@ public ref partial struct Utf8YamlReader
         // Store the content indentation for later processing in GetString()
         _blockScalarIndent = contentIndent;
         
+        // Store the chomping indicator for later processing in GetString()
+        _blockScalarChomping = chomping;
+        
         int valueStart = _consumed;
         
         // Collect all lines with proper indentation
@@ -2215,6 +2218,9 @@ public ref partial struct Utf8YamlReader
         
         // Store the content indentation for later processing in GetString()
         _blockScalarIndent = contentIndent;
+        
+        // Store the chomping indicator for later processing in GetString()
+        _blockScalarChomping = chomping;
         
         int valueStart = _consumed;
         
