@@ -677,10 +677,22 @@ public sealed class Utf8YamlWriter : IDisposable
             WriteRaw("''"u8);
             return;
         }
-        
+
+        // Check if we should use literal block style for multi-line strings
+        // Use literal block style when:
+        // 1. Not in flow context (block scalars not allowed in flow)
+        // 2. String contains actual newlines (\n)
+        // 3. DefaultScalarStyle is Any (auto-detect) or Literal
+        if (!_inFlowContext && ContainsNewline(value) &&
+            (_options.DefaultScalarStyle is ScalarStyle.Any or ScalarStyle.Literal))
+        {
+            WriteLiteralScalarValue(value);
+            return;
+        }
+
         // Determine if quoting is needed
         bool needsQuoting = NeedsQuoting(value);
-        
+
         if (needsQuoting)
         {
             WriteRaw((byte)'\'');
@@ -703,6 +715,79 @@ public sealed class Utf8YamlWriter : IDisposable
         else
         {
             WriteRaw(Encoding.UTF8.GetBytes(value.ToArray()));
+        }
+    }
+
+    private static bool ContainsNewline(ReadOnlySpan<char> value)
+    {
+        foreach (char c in value)
+        {
+            if (c == '\n')
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void WriteLiteralScalarValue(ReadOnlySpan<char> value)
+    {
+        // Determine the chomping indicator based on trailing newlines
+        // - No indicator (clip): single trailing newline is kept, additional ones are stripped
+        // - '-' (strip): all trailing newlines are stripped
+        // - '+' (keep): all trailing newlines are preserved
+        bool endsWithNewline = value.Length > 0 && value[^1] == '\n';
+        bool hasMultipleTrailingNewlines = value.Length > 1 && value[^1] == '\n' &&
+            (value[^2] == '\n' || (value[^2] == '\r' && value.Length > 2 && value[^3] == '\n'));
+
+        WriteRaw((byte)'|');
+        if (!endsWithNewline)
+        {
+            WriteRaw((byte)'-'); // Strip chomping - no trailing newline
+        }
+        else if (hasMultipleTrailingNewlines)
+        {
+            WriteRaw((byte)'+'); // Keep chomping - preserve multiple trailing newlines
+        }
+        // Otherwise, default clip chomping (single trailing newline)
+        WriteNewLine();
+
+        // Split the value into lines and write each with proper indentation
+        int start = 0;
+        for (int i = 0; i < value.Length; i++)
+        {
+            if (value[i] == '\n')
+            {
+                WriteIndent(_currentDepth);
+                var line = value[start..i];
+                // Remove trailing \r if present (handle \r\n)
+                if (line.Length > 0 && line[^1] == '\r')
+                {
+                    line = line[..^1];
+                }
+                WriteRaw(Encoding.UTF8.GetBytes(line.ToArray()));
+                WriteNewLine();
+                start = i + 1;
+            }
+        }
+
+        // Write the last line if there's content after the last newline
+        if (start < value.Length)
+        {
+            var lastLine = value[start..];
+            // Remove trailing \r if present
+            if (lastLine.Length > 0 && lastLine[^1] == '\r')
+            {
+                lastLine = lastLine[..^1];
+            }
+            if (lastLine.Length > 0)
+            {
+                WriteIndent(_currentDepth);
+                WriteRaw(Encoding.UTF8.GetBytes(lastLine.ToArray()));
+                // Note: No WriteNewLine() here - the next property will start on a new line anyway
+                // For strip chomping, we explicitly don't want a trailing newline in the content
+                // For clip/keep, trailing newlines are handled by the newlines in the original value
+            }
         }
     }
 

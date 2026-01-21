@@ -30,6 +30,9 @@ public ref partial struct Utf8YamlReader
     // Block scalar indentation tracking (for stripping leading spaces)
     private int _blockScalarIndent;
     
+    // Block scalar chomping indicator (for handling trailing newlines)
+    private ChompingIndicator _blockScalarChomping;
+    
     // Current token value storage
     private ReadOnlySpan<byte> _valueSpan;
     
@@ -262,9 +265,9 @@ public ref partial struct Utf8YamlReader
         }
 
         // For block scalars, we need to strip the content indentation
-        if (_scalarStyle is ScalarStyle.Literal or ScalarStyle.Folded && _blockScalarIndent > 0)
+        if (_scalarStyle is ScalarStyle.Literal or ScalarStyle.Folded)
         {
-            return ProcessBlockScalarContent(_valueSpan, _blockScalarIndent, _scalarStyle);
+            return ProcessBlockScalarContent(_valueSpan, _blockScalarIndent, _scalarStyle, _blockScalarChomping);
         }
 
         // For double-quoted strings, decode escape sequences
@@ -566,12 +569,13 @@ public ref partial struct Utf8YamlReader
     /// <summary>
     /// Processes block scalar content by stripping indentation and applying folding rules.
     /// </summary>
-    private static string ProcessBlockScalarContent(ReadOnlySpan<byte> content, int indent, ScalarStyle style)
+    private static string ProcessBlockScalarContent(ReadOnlySpan<byte> content, int indent, ScalarStyle style, ChompingIndicator chomping)
     {
         var result = new System.Text.StringBuilder();
         int pos = 0;
         bool firstLine = true;
         bool previousWasEmpty = false;
+        int trailingNewlines = 0;
         
         while (pos < content.Length)
         {
@@ -592,6 +596,16 @@ public ref partial struct Utf8YamlReader
             
             int lineEnd = pos;
             bool isEmptyLine = lineStart == lineEnd;
+            
+            // Track trailing newlines for chomping
+            if (isEmptyLine)
+            {
+                trailingNewlines++;
+            }
+            else
+            {
+                trailingNewlines = 0;
+            }
             
             // Handle line content
             if (style == ScalarStyle.Folded)
@@ -638,14 +652,33 @@ public ref partial struct Utf8YamlReader
             }
         }
         
-        // Apply chomping: default is Clip (single trailing newline)
-        // For now, just add a trailing newline for non-empty content
-        if (result.Length > 0 && !result.ToString().EndsWith('\n'))
-        {
-            result.Append('\n');
-        }
+        // Apply chomping based on indicator
+        // Strip (-): remove all trailing newlines
+        // Clip (default): single trailing newline
+        // Keep (+): preserve all trailing newlines
+        var resultStr = result.ToString();
         
-        return result.ToString();
+        switch (chomping)
+        {
+            case ChompingIndicator.Strip:
+                // Remove all trailing newlines
+                return resultStr.TrimEnd('\n', '\r');
+                
+            case ChompingIndicator.Keep:
+                // Preserve trailing newlines from input (already captured as empty lines)
+                // Add a final newline for the last line if not already present
+                if (resultStr.Length > 0 && !resultStr.EndsWith('\n'))
+                {
+                    return resultStr + '\n';
+                }
+                return resultStr;
+                
+            case ChompingIndicator.Clip:
+            default:
+                // Exactly one trailing newline
+                var trimmed = resultStr.TrimEnd('\n', '\r');
+                return trimmed.Length > 0 ? trimmed + '\n' : trimmed;
+        }
     }
 
     /// <summary>
