@@ -434,6 +434,27 @@ public sealed class Utf8YamlWriter : IDisposable
     public void WriteString(ReadOnlySpan<char> value)
     {
         WriteScalarPrelude();
+
+        // Handle block scalar case specially
+        if (!_inFlowContext && ContainsNewline(value) &&
+            (_options.DefaultScalarStyle is ScalarStyle.Any or ScalarStyle.Literal))
+        {
+            WriteLiteralScalarValue(value);
+            SetNotFirstInContainer();
+            
+            // For block scalars:
+            // - If string ends with newline (clip/keep), we already wrote the newline
+            //   as part of the content, so don't set _needsNewLine
+            // - If string doesn't end with newline (strip), we need a newline before
+            //   the next property
+            bool endsWithNewline = value.Length > 0 && value[^1] == '\n';
+            if (!endsWithNewline)
+            {
+                _needsNewLine = true;
+            }
+            return;
+        }
+
         WriteScalarValue(value);
         WriteScalarPostlude();
     }
@@ -678,17 +699,9 @@ public sealed class Utf8YamlWriter : IDisposable
             return;
         }
 
-        // Check if we should use literal block style for multi-line strings
-        // Use literal block style when:
-        // 1. Not in flow context (block scalars not allowed in flow)
-        // 2. String contains actual newlines (\n)
-        // 3. DefaultScalarStyle is Any (auto-detect) or Literal
-        if (!_inFlowContext && ContainsNewline(value) &&
-            (_options.DefaultScalarStyle is ScalarStyle.Any or ScalarStyle.Literal))
-        {
-            WriteLiteralScalarValue(value);
-            return;
-        }
+        // Note: Block scalar handling has been moved to WriteString to properly
+        // skip the postlude (which sets _needsNewLine = true). Block scalars
+        // already end with a newline, so we don't want an additional one.
 
         // Determine if quoting is needed
         bool needsQuoting = NeedsQuoting(value);

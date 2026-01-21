@@ -20,6 +20,7 @@ namespace Yamlify.Tests.Serialization;
 [YamlSerializable(typeof(Level3))]
 // Primitives
 [YamlSerializable(typeof(AllPrimitivesClass))]
+[YamlSerializable(typeof(MultiStringClass))]
 [YamlSerializable(typeof(SpecialNumbersClass))]
 // Enums
 [YamlSerializable(typeof(EnumClass))]

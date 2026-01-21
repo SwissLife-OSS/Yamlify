@@ -17,6 +17,17 @@ public class AllPrimitivesClass
 }
 
 /// <summary>
+/// Class for testing multiple multi-line string properties.
+/// </summary>
+public class MultiStringClass
+{
+    public string? FirstText { get; set; }
+    public string? SecondText { get; set; }
+    public string? ThirdText { get; set; }
+    public int Value { get; set; }
+}
+
+/// <summary>
 /// Class for testing special float values.
 /// </summary>
 public class SpecialNumbersClass
@@ -491,6 +502,42 @@ public class PrimitiveSerializationTests
 
         Assert.NotNull(deserialized);
         Assert.Equal(original.Name, deserialized.Name);
+    }
+
+    [Fact]
+    public void SerializeMultipleBlockScalars_NoExtraBlankLines()
+    {
+        // Arrange - Object with multiple multi-line string properties
+        var original = new MultiStringClass
+        {
+            FirstText = "First line\nSecond line\n",
+            SecondText = "Another first line\nAnother second line\n",
+            ThirdText = "Third property line 1\nThird property line 2\n",
+            Value = 42
+        };
+
+        // Act
+        var yaml = YamlSerializer.Serialize(original, TestSerializerContext.Default.MultiStringClass);
+
+        // Assert - Should use | (clip) chomping for strings ending with newline
+        Assert.Contains("first-text: |", yaml);
+        Assert.Contains("second-text: |", yaml);
+        Assert.Contains("third-text: |", yaml);
+
+        // Verify no extra blank lines between properties
+        // Each block scalar content ends with a newline, then the next property should start
+        // immediately on the next line without an extra blank line
+        Assert.DoesNotContain("\n\nsecond-text:", yaml);
+        Assert.DoesNotContain("\n\nthird-text:", yaml);
+        Assert.DoesNotContain("\n\nvalue:", yaml);
+
+        // Verify roundtrip
+        var deserialized = YamlSerializer.Deserialize(yaml, TestSerializerContext.Default.MultiStringClass);
+        Assert.NotNull(deserialized);
+        Assert.Equal(original.FirstText, deserialized.FirstText);
+        Assert.Equal(original.SecondText, deserialized.SecondText);
+        Assert.Equal(original.ThirdText, deserialized.ThirdText);
+        Assert.Equal(original.Value, deserialized.Value);
     }
 
     [Fact]
