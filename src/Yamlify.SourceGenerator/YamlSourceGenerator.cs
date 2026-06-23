@@ -25,6 +25,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     private const string YamlSerializableAttributeGeneric = "Yamlify.Serialization.YamlSerializableAttribute<T>";
     private const string YamlDerivedTypeMappingAttributeGeneric = "Yamlify.Serialization.YamlDerivedTypeMappingAttribute<TBase, TDerived>";
     private const string YamlSerializerContextBase = "Yamlify.Serialization.YamlSerializerContext";
+    private const string KeepNullValueAttribute = "Yamlify.Serialization.KeepNullValueAttribute";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -40,7 +41,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         var compilationAndClasses = context.CompilationProvider.Combine(contextDeclarations.Collect());
 
         // Generate source
-        context.RegisterSourceOutput(compilationAndClasses, 
+        context.RegisterSourceOutput(compilationAndClasses,
             static (spc, source) => Execute(source.Left, source.Right, spc));
     }
 
@@ -55,7 +56,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     {
         var classDecl = (ClassDeclarationSyntax)context.Node;
         var classSymbol = context.SemanticModel.GetDeclaredSymbol(classDecl);
-        
+
         if (classSymbol is null)
         {
             return null;
@@ -64,7 +65,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         // Check if it derives from YamlSerializerContext
         var baseType = classSymbol.BaseType;
         var isSerializerContext = false;
-        
+
         while (baseType is not null)
         {
             if (baseType.ToDisplayString() == YamlSerializerContextBase)
@@ -87,15 +88,15 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         var ignoreNullValues = false;
         var ignoreEmptyObjects = false;
         var discriminatorPosition = DiscriminatorPositionMode.PropertyOrder;
-        
+
         // First pass: collect YamlDerivedTypeMapping attributes
         // Key: base type display string, Value: list of (discriminator, derivedType)
         var derivedTypeMappingsFromAttrs = new Dictionary<string, List<(string Discriminator, INamedTypeSymbol DerivedType)>>();
-        
+
         foreach (var attributeData in classSymbol.GetAttributes())
         {
             var attrOriginalDef = attributeData.AttributeClass?.OriginalDefinition?.ToDisplayString();
-            
+
             if (attrOriginalDef == YamlDerivedTypeMappingAttributeGeneric)
             {
                 // [YamlDerivedTypeMapping<TBase, TDerived>("discriminator")]
@@ -104,16 +105,16 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                     attrClass.TypeArguments[1] is INamedTypeSymbol mappingDerivedType)
                 {
                     var baseTypeKey = mappingBaseType.ToDisplayString();
-                    
+
                     // Get discriminator from constructor argument (optional)
                     string? discriminator = null;
-                    if (attributeData.ConstructorArguments.Length > 0 && 
+                    if (attributeData.ConstructorArguments.Length > 0 &&
                         attributeData.ConstructorArguments[0].Value is string discValue)
                     {
                         discriminator = discValue;
                     }
                     discriminator ??= mappingDerivedType.Name;
-                    
+
                     if (!derivedTypeMappingsFromAttrs.TryGetValue(baseTypeKey, out var mappings))
                     {
                         mappings = new List<(string, INamedTypeSymbol)>();
@@ -123,17 +124,17 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 }
             }
         }
-        
+
         // Second pass: process YamlSerializable attributes
         foreach (var attributeData in classSymbol.GetAttributes())
         {
             var attrName = attributeData.AttributeClass?.ToDisplayString();
             var attrOriginalDef = attributeData.AttributeClass?.OriginalDefinition?.ToDisplayString();
-            
+
             // Support both [YamlSerializable(typeof(T))] and [YamlSerializable<T>]
             INamedTypeSymbol? typeArg = null;
             var isYamlSerializableAttribute = false;
-            
+
             if (attrName == YamlSerializableAttribute)
             {
                 // Non-generic: [YamlSerializable(typeof(T))]
@@ -154,7 +155,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                     isYamlSerializableAttribute = true;
                 }
             }
-            
+
             if (isYamlSerializableAttribute && typeArg is not null)
             {
                 // Check for per-type PropertyOrdering override
@@ -162,7 +163,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 string? typeDiscriminatorPropertyName = null;
                 List<INamedTypeSymbol>? derivedTypes = null;
                 List<string>? derivedTypeDiscriminators = null;
-                
+
                 foreach (var namedArg in attributeData.NamedArguments)
                 {
                     if (namedArg.Key == "PropertyOrdering" && namedArg.Value.Value is int orderingValue && orderingValue >= 0)
@@ -189,14 +190,14 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                             .ToList();
                     }
                 }
-                
+
                 // Build PolymorphicInfo if polymorphic configuration is specified
                 PolymorphicInfo? polymorphicConfig = null;
                 var typeKey = typeArg.ToDisplayString();
-                
+
                 // Check for derived type mappings from YamlDerivedTypeMappingAttribute
-                if (typeDiscriminatorPropertyName is not null && 
-                    derivedTypeMappingsFromAttrs.TryGetValue(typeKey, out var mappingsFromAttr) && 
+                if (typeDiscriminatorPropertyName is not null &&
+                    derivedTypeMappingsFromAttrs.TryGetValue(typeKey, out var mappingsFromAttr) &&
                     mappingsFromAttr.Count > 0)
                 {
                     // Use mappings from YamlDerivedTypeMappingAttribute
@@ -217,7 +218,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                     }
                     polymorphicConfig = new PolymorphicInfo(typeDiscriminatorPropertyName, derivedTypeMappings);
                 }
-                
+
                 // Check if type has [YamlConverter] attribute for custom converter support
                 INamedTypeSymbol? customConverterType = null;
                 foreach (var typeAttr in typeArg.GetAttributes())
@@ -232,7 +233,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                         break;
                     }
                 }
-                
+
                 typesToGenerate.Add(new TypeToGenerate(typeArg, typeOrdering, polymorphicConfig, customConverterType));
             }
             else if (attrName == "Yamlify.Serialization.YamlSourceGenerationOptionsAttribute")
@@ -289,8 +290,8 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static void Execute(
-        Compilation compilation, 
-        ImmutableArray<ContextToGenerate> contexts, 
+        Compilation compilation,
+        ImmutableArray<ContextToGenerate> contexts,
         SourceProductionContext spc)
     {
         if (contexts.IsDefaultOrEmpty)
@@ -328,7 +329,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     private static string GenerateContextSource(ContextToGenerate ctx, Compilation compilation)
     {
         var sb = new StringBuilder();
-        
+
         sb.AppendLine("// <auto-generated />");
         sb.AppendLine("// This file was generated by Yamlify.SourceGenerator.");
         sb.AppendLine("// It is AOT-compatible and uses no reflection at runtime.");
@@ -349,7 +350,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
 
         sb.AppendLine($"partial class {ctx.ClassName}");
         sb.AppendLine("{");
-        
+
         // Generate constructor that configures options if any non-default settings
         var hasNonDefaultOptions = !ctx.IndentSequenceItems || ctx.IgnoreNullValues || ctx.IgnoreEmptyObjects;
         if (hasNonDefaultOptions)
@@ -373,7 +374,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine("    }");
             sb.AppendLine();
         }
-        
+
         // Generate static Default singleton
         sb.AppendLine($"    private static {ctx.ClassName}? _default;");
         sb.AppendLine($"    public static {ctx.ClassName} Default => _default ??= new {ctx.ClassName}();");
@@ -387,7 +388,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             var propertyName = propertyNameMap[type.Symbol.ToDisplayString()];
             var fullTypeName = type.Symbol.ToDisplayString();
-            
+
             sb.AppendLine($"    private YamlTypeInfo<{fullTypeName}>? _{propertyName.ToLowerInvariant()};");
             sb.AppendLine($"    public YamlTypeInfo<{fullTypeName}> {propertyName} => _{propertyName.ToLowerInvariant()} ??= Create{propertyName}TypeInfo();");
             sb.AppendLine();
@@ -396,14 +397,14 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         // Generate GetTypeInfo override
         sb.AppendLine("    public override YamlTypeInfo? GetTypeInfo(Type type, YamlSerializerOptions options)");
         sb.AppendLine("    {");
-        
+
         foreach (var type in ctx.Types)
         {
             var fullTypeName = type.Symbol.ToDisplayString();
             var propertyName = propertyNameMap[fullTypeName];
             sb.AppendLine($"        if (type == typeof({fullTypeName})) return {propertyName};");
         }
-        
+
         sb.AppendLine("        return null;");
         sb.AppendLine("    }");
         sb.AppendLine();
@@ -443,10 +444,10 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         var fullTypeName = type.Symbol.ToDisplayString();
         var converterName = GetConverterName(type.Symbol);
         var hasCustomConverter = type.CustomConverterType is not null;
-        
+
         sb.AppendLine($"    private YamlTypeInfo<{fullTypeName}> Create{propertyName}TypeInfo()");
         sb.AppendLine("    {");
-        
+
         if (hasCustomConverter)
         {
             // Use the custom converter with GeneratedRead/GeneratedWrite delegates set via object initializer
@@ -461,7 +462,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             sb.AppendLine($"        var converter = new {converterName}();");
         }
-        
+
         sb.AppendLine($"        var properties = new List<YamlPropertyInfo>();");
         sb.AppendLine();
 
@@ -475,7 +476,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine($"        properties.Add(new YamlPropertyInfo<{fullTypeName}, {propTypeName}>(");
             sb.AppendLine($"            name: \"{propName}\",");
             sb.AppendLine($"            serializedName: \"{yamlName}\",");
-            
+
             if (prop.GetMethod is not null)
             {
                 sb.AppendLine($"            getter: static obj => obj.{propName},");
@@ -484,9 +485,9 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             {
                 sb.AppendLine($"            getter: null,");
             }
-            
+
             // Init-only properties cannot have setters (they must be set in object initializer/constructor)
-            if (prop.SetMethod is not null 
+            if (prop.SetMethod is not null
                 && prop.SetMethod.DeclaredAccessibility == Accessibility.Public
                 && !prop.SetMethod.IsInitOnly)
             {
@@ -502,20 +503,20 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         // Check if type has parameterless constructor and no required members
         var hasParameterlessConstructor = type.Symbol.Constructors
             .Any(c => c.Parameters.Length == 0 && c.DeclaredAccessibility == Accessibility.Public);
-        
+
         // Check for required members including inherited (cannot use default CreateInstance)
         var hasRequiredMembers = GetAllProperties(type.Symbol)
             .Any(p => p.IsRequired);
 
         sb.AppendLine($"        return new YamlTypeInfo<{fullTypeName}>(converter, properties, Options)");
         sb.AppendLine("        {");
-        
+
         // Only generate CreateInstance if no required members
         if (hasParameterlessConstructor && !hasRequiredMembers)
         {
             sb.AppendLine($"            CreateInstance = static () => new {fullTypeName}(),");
         }
-        
+
         // For custom converters, use the custom converter's methods (which may delegate to generated code)
         if (hasCustomConverter)
         {
@@ -527,7 +528,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine($"            SerializeAction = static (writer, value, options) => new {converterName}().Write(writer, value, options),");
             sb.AppendLine($"            DeserializeFunc = static (ref Utf8YamlReader reader, YamlSerializerOptions options) => new {converterName}().Read(ref reader, options)");
         }
-        
+
         sb.AppendLine("        };");
         sb.AppendLine("    }");
         sb.AppendLine();
@@ -547,11 +548,11 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
 
         sb.AppendLine($"    private sealed class {converterName} : YamlConverter<{fullTypeName}>");
         sb.AppendLine("    {");
-        
+
         // Check if this is a polymorphic base type (from [YamlSerializable] or [YamlPolymorphic] attributes)
         var polyInfo = GetPolymorphicInfoForType(type);
         var isPolymorphicBase = polyInfo is not null && polyInfo.DerivedTypes.Count > 0;
-        
+
         // Read method
         GenerateReadMethod(sb, type, allTypes, compilation);
         sb.AppendLine();
@@ -581,7 +582,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         var fullTypeName = type.Symbol.ToDisplayString();
         var isValueType = type.Symbol.IsValueType;
         var nullableAnnotation = isValueType ? "" : "?";
-        
+
         // Check if this is a polymorphic base type
         var polyInfo = GetPolymorphicInfoForType(type);
         var isPolymorphicBase = polyInfo is not null && polyInfo.DerivedTypes.Count > 0;
@@ -592,26 +593,26 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine($"    /// </summary>");
         sb.AppendLine($"    private sealed class {converterName} : YamlConverter<{fullTypeName}>");
         sb.AppendLine("    {");
-        
+
         // Instance field for lazy initialization
         sb.AppendLine($"        private static {converterName}? _instance;");
         sb.AppendLine($"        private static {converterName} Instance => _instance ??= new {converterName}();");
         sb.AppendLine();
-        
+
         // Generate static ReadCore method that delegates to instance Read
         sb.AppendLine($"        public static {fullTypeName}{nullableAnnotation} ReadCore(ref Utf8YamlReader reader, YamlSerializerOptions options)");
         sb.AppendLine("        {");
         sb.AppendLine("            return Instance.Read(ref reader, options);");
         sb.AppendLine("        }");
         sb.AppendLine();
-        
+
         // Generate static WriteCore method that delegates to instance Write
         sb.AppendLine($"        public static void WriteCore(Utf8YamlWriter writer, {fullTypeName} value, YamlSerializerOptions options)");
         sb.AppendLine("        {");
         sb.AppendLine("            Instance.Write(writer, value, options);");
         sb.AppendLine("        }");
         sb.AppendLine();
-        
+
         // Read method
         GenerateReadMethod(sb, type, allTypes, compilation);
         sb.AppendLine();
@@ -634,7 +635,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     {
         var typeName = type.Symbol.Name;
         var fullTypeName = type.Symbol.ToDisplayString();
-        
+
         // For value types (structs), the return type must not include ? because:
         // - The base class has T? which for value types means Nullable<T>
         // - When overriding, we must match the signature exactly
@@ -644,7 +645,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
 
         sb.AppendLine($"        public override {fullTypeName}{nullableAnnotation} Read(ref Utf8YamlReader reader, YamlSerializerOptions options)");
         sb.AppendLine("        {");
-        
+
         // Special handling for enums - they are scalar values, not mappings
         if (type.Symbol.TypeKind == TypeKind.Enum)
         {
@@ -658,21 +659,21 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine("        }");
             return;
         }
-        
+
         // Special handling for collection types (List<T>, T[], etc.) at root level
         if (IsListOrArray(type.Symbol, out var elementType, out var isHashSet))
         {
             GenerateRootCollectionRead(sb, type.Symbol, elementType!, isHashSet, allTypes);
             return;
         }
-        
+
         // Special handling for dictionary types at root level
         if (IsDictionary(type.Symbol, out var keyType, out var valueType))
         {
             GenerateRootDictionaryRead(sb, type.Symbol, keyType!, valueType!, allTypes);
             return;
         }
-        
+
         sb.AppendLine("            if (reader.TokenType != YamlTokenType.MappingStart)");
         sb.AppendLine("            {");
         sb.AppendLine("                // Skip unexpected token to prevent infinite loops when reading collections");
@@ -680,7 +681,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine("                return default;");
         sb.AppendLine("            }");
         sb.AppendLine();
-        
+
         // Check if this type is polymorphic (from [YamlSerializable] or [YamlPolymorphic] attributes)
         var polyInfo = GetPolymorphicInfoForType(type);
         if (polyInfo is { DerivedTypes.Count: > 0 } && (type.Symbol.IsAbstract || type.Symbol.TypeKind == TypeKind.Interface))
@@ -698,25 +699,25 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine("        }");
             return;
         }
-        
+
         // Collect all public readable properties including inherited (for reading values from YAML)
         // Exclude properties with YamlIgnore attribute
         var allReadableProperties = GetAllProperties(type.Symbol)
             .Where(p => p.GetMethod is not null && !ShouldIgnoreProperty(p))
             .ToList();
-        
+
         // Collect settable properties (for object initializer syntax)
         // Include both regular setters and init-only setters
         var settableProperties = allReadableProperties
-            .Where(p => p.SetMethod is not null 
+            .Where(p => p.SetMethod is not null
                      && p.SetMethod.DeclaredAccessibility == Accessibility.Public)
             .ToList();
-        
+
         // Init-only properties must be set in object initializer, not via assignment
         var initOnlyProperties = settableProperties
             .Where(p => p.SetMethod!.IsInitOnly)
             .ToList();
-        
+
         // Regular settable properties can be set after construction
         var regularSettableProperties = settableProperties
             .Where(p => !p.SetMethod!.IsInitOnly)
@@ -727,17 +728,17 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             .Where(c => c.DeclaredAccessibility == Accessibility.Public && !c.IsStatic)
             .OrderByDescending(c => c.Parameters.Length)
             .ToList();
-        
+
         var parameterlessConstructor = constructors.FirstOrDefault(c => c.Parameters.Length == 0);
         var primaryConstructor = parameterlessConstructor is null ? constructors.FirstOrDefault() : null;
-        
+
         // Check if any properties have the 'required' modifier - these must always be set
         var hasRequiredProperties = settableProperties.Any(p => p.IsRequired);
-        
+
         // Only use the "preserve defaults" optimization if we have a parameterless constructor
         // AND no required properties (can't create defaults object with required properties)
         var canPreserveDefaults = parameterlessConstructor is not null && !hasRequiredProperties;
-        
+
         // Build a dictionary of property name -> default value from constructor parameters
         var constructorDefaults = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (primaryConstructor is not null)
@@ -757,15 +758,15 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             var propName = prop.Name;
             var propTypeName = prop.Type.ToDisplayString();
-            
+
             // Use constructor default if available, otherwise use type default
-            var defaultValue = constructorDefaults.TryGetValue(propName, out var ctorDefault) 
-                ? ctorDefault 
+            var defaultValue = constructorDefaults.TryGetValue(propName, out var ctorDefault)
+                ? ctorDefault
                 : GetDefaultValue(prop.Type);
-            
+
             sb.AppendLine($"            {propTypeName} _{propName.ToLowerInvariant()} = {defaultValue};");
         }
-        
+
         // For types where we can preserve defaults, track which settable properties were actually set from YAML
         // This allows the object's property initializers/constructor defaults to be preserved for properties not in YAML
         if (canPreserveDefaults)
@@ -810,7 +811,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             {
                 sb.AppendLine($"                    case \"{kebabName}\":");
             }
-            
+
             // Check for sibling discriminator - for simple types, the discriminator applies to the property itself
             // For dictionaries, the discriminator applies to the value type (polymorphic dictionary values)
             SiblingDiscriminatorInfo? siblingInfo = null;
@@ -819,14 +820,19 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 siblingInfo = GetSiblingDiscriminatorInfo(prop);
             }
             GeneratePropertyRead(sb, propName, prop.Type, allTypes, siblingInfo);
-            
+
             // For types where we can preserve defaults, mark that this settable property was actually set from YAML
             // For reference types, only mark as "has value" if the deserialized value is not null
             // This ensures that `property:` (empty/null in YAML) preserves the class default value
             if (canPreserveDefaults && settableProperties.Contains(prop))
             {
                 var varName = $"_{propName.ToLowerInvariant()}";
-                if (prop.Type.IsValueType)
+                if (HasKeepNullValue(prop))
+                {
+                    // [KeepNullValue] forces explicit nulls from YAML to be honored
+                    sb.AppendLine($"                        _has{propName} = true;");
+                }
+                else if (prop.Type.IsValueType)
                 {
                     // Value types are always "set"
                     sb.AppendLine($"                        _has{propName} = true;");
@@ -837,7 +843,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                     sb.AppendLine($"                        _has{propName} = {varName} is not null;");
                 }
             }
-            
+
             sb.AppendLine("                        break;");
         }
 
@@ -856,12 +862,12 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             // Use parameterless constructor with "preserve defaults" optimization
             // Both init-only and regular settable properties: only set if they were actually found in YAML
             // This preserves the class's default property values (from constructor or property initializers)
-            
+
             if (initOnlyProperties.Count > 0)
             {
                 sb.AppendLine($"            // Create temporary object to capture default values from parameterless constructor");
                 sb.AppendLine($"            var _defaults = new {fullTypeName}();");
-                
+
                 sb.AppendLine($"            var result = new {fullTypeName}");
                 sb.AppendLine("            {");
                 for (int i = 0; i < initOnlyProperties.Count; i++)
@@ -877,7 +883,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             {
                 sb.AppendLine($"            var result = new {fullTypeName}();");
             }
-            
+
             // Regular properties - only set if present in YAML to preserve class default values
             foreach (var prop in regularSettableProperties)
             {
@@ -916,13 +922,13 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             {
                 var args = new List<string>();
                 var usedPropertyNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                
+
                 foreach (var param in primaryConstructor.Parameters)
                 {
                     // Find matching property from ALL readable properties (not just settable)
                     var matchingProp = allReadableProperties
                         .FirstOrDefault(p => p.Name.Equals(param.Name, StringComparison.OrdinalIgnoreCase));
-                    
+
                     if (matchingProp is not null)
                     {
                         args.Add($"_{matchingProp.Name.ToLowerInvariant()}");
@@ -933,12 +939,12 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                         args.Add(GetDefaultValue(param.Type));
                     }
                 }
-                
+
                 // Find settable properties that aren't covered by constructor parameters
                 var additionalSettableProps = settableProperties
                     .Where(p => !usedPropertyNames.Contains(p.Name))
                     .ToList();
-                
+
                 if (additionalSettableProps.Count > 0)
                 {
                     // Use object initializer syntax after constructor call
@@ -962,7 +968,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 sb.AppendLine($"            return default;");
             }
         }
-        
+
         sb.AppendLine("        }");
     }
 
@@ -972,9 +978,9 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     /// then constructs the correct concrete type based on the discriminator value.
     /// </summary>
     private static void GeneratePolymorphicRead(
-        StringBuilder sb, 
-        TypeToGenerate type, 
-        PolymorphicInfo polyInfo, 
+        StringBuilder sb,
+        TypeToGenerate type,
+        PolymorphicInfo polyInfo,
         IReadOnlyList<TypeToGenerate> allTypes,
         string fullTypeName)
     {
@@ -982,7 +988,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         // Key: PropertyName -> (VariableName, TypeSymbol, List of YamlNames)
         var allProperties = new Dictionary<string, (string VarName, ITypeSymbol PropType, HashSet<string> YamlNames)>(StringComparer.OrdinalIgnoreCase);
         var discriminatorPropertyName = polyInfo.TypeDiscriminatorPropertyName;
-        
+
         // Get properties from the base type first
         foreach (var prop in GetAllProperties(type.Symbol).Where(p => p.GetMethod is not null && !ShouldIgnoreProperty(p)))
         {
@@ -995,7 +1001,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             };
             allProperties[prop.Name] = (varName, prop.Type, yamlNames);
         }
-        
+
         // Collect properties from all derived types
         foreach (var (_, derivedTypeSymbol) in polyInfo.DerivedTypes)
         {
@@ -1022,10 +1028,10 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 }
             }
         }
-        
+
         // Declare the discriminator variable
         sb.AppendLine($"            string? _discriminator = null;");
-        
+
         // Declare variables for all properties with tracking flags for default preservation
         foreach (var kvp in allProperties)
         {
@@ -1050,7 +1056,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine("                var propertyName = reader.GetString();");
         sb.AppendLine("                reader.Read();");
         sb.AppendLine();
-        
+
         // Handle discriminator first
         sb.AppendLine($"                if (propertyName == \"{discriminatorPropertyName}\")");
         sb.AppendLine("                {");
@@ -1059,7 +1065,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine("                    continue;");
         sb.AppendLine("                }");
         sb.AppendLine();
-        
+
         sb.AppendLine("                switch (propertyName)");
         sb.AppendLine("                {");
 
@@ -1068,15 +1074,15 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             var propName = kvp.Key;
             var propInfo = kvp.Value;
-            
+
             foreach (var yamlName in propInfo.YamlNames.Distinct())
             {
                 sb.AppendLine($"                    case \"{yamlName}\":");
             }
-            
+
             GeneratePropertyRead(sb, propName, propInfo.PropType, allTypes);
             sb.AppendLine($"                        _has{propName} = true;");
-            
+
             sb.AppendLine("                        break;");
         }
 
@@ -1088,7 +1094,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendLine("            reader.Read(); // Move past MappingEnd");
         sb.AppendLine();
-        
+
         // Create defaults instances for derived types with parameterless constructors
         // to preserve default property values from the type definition
         foreach (var (discriminator, derivedTypeSymbol) in polyInfo.DerivedTypes)
@@ -1096,7 +1102,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             var constructors = derivedTypeSymbol.Constructors
                 .Where(c => c.DeclaredAccessibility == Accessibility.Public && !c.IsStatic)
                 .ToList();
-            
+
             var hasParameterlessConstructor = constructors.Any(c => c.Parameters.Length == 0);
             if (hasParameterlessConstructor)
             {
@@ -1106,7 +1112,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             }
         }
         sb.AppendLine();
-        
+
         // Generate if/else chain on discriminator to construct the correct concrete type
         // Using if/else with StringComparison.OrdinalIgnoreCase for case-insensitive matching
         var isFirst = true;
@@ -1114,32 +1120,32 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             var derivedFullTypeName = derivedTypeSymbol.ToDisplayString();
             var safeTypeName = derivedTypeSymbol.Name.Replace(".", "_");
-            
+
             // Get all settable properties for this derived type
             var derivedProperties = GetAllProperties(derivedTypeSymbol)
-                .Where(p => p.GetMethod is not null && p.SetMethod is not null 
+                .Where(p => p.GetMethod is not null && p.SetMethod is not null
                          && p.SetMethod.DeclaredAccessibility == Accessibility.Public
                          && !ShouldIgnoreProperty(p))
                 .ToList();
-            
+
             // Get constructor info for this derived type
             var constructors = derivedTypeSymbol.Constructors
                 .Where(c => c.DeclaredAccessibility == Accessibility.Public && !c.IsStatic)
                 .OrderByDescending(c => c.Parameters.Length)
                 .ToList();
-            
+
             var parameterlessConstructor = constructors.FirstOrDefault(c => c.Parameters.Length == 0);
             var primaryConstructor = parameterlessConstructor is null ? constructors.FirstOrDefault() : null;
-            
+
             var ifKeyword = isFirst ? "if" : "else if";
             sb.AppendLine($"            {ifKeyword} (string.Equals(_discriminator, \"{discriminator}\", System.StringComparison.OrdinalIgnoreCase))");
             sb.AppendLine("            {");
-            
+
             if (parameterlessConstructor is not null)
             {
                 // Use object initializer with conditional default fallback
                 sb.Append($"                return new {derivedFullTypeName} {{ ");
-                var propsToSet = derivedProperties.Select(p => 
+                var propsToSet = derivedProperties.Select(p =>
                     $"{p.Name} = _has{p.Name} ? _{p.Name.ToLowerInvariant()} : _defaults{safeTypeName}.{p.Name}");
                 sb.Append(string.Join(", ", propsToSet));
                 sb.AppendLine(" };");
@@ -1152,15 +1158,15 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                     {
                         var matchingProp = derivedProperties
                             .FirstOrDefault(p => p.Name.Equals(param.Name, StringComparison.OrdinalIgnoreCase));
-                        return matchingProp is not null 
-                            ? $"_{matchingProp.Name.ToLowerInvariant()}" 
+                        return matchingProp is not null
+                            ? $"_{matchingProp.Name.ToLowerInvariant()}"
                             : GetDefaultValue(param.Type);
                     });
-                
+
                 // Find additional properties not covered by constructor
                 var usedNames = new HashSet<string>(primaryConstructor.Parameters.Select(p => p.Name), StringComparer.OrdinalIgnoreCase);
                 var additionalProps = derivedProperties.Where(p => !usedNames.Contains(p.Name)).ToList();
-                
+
                 if (additionalProps.Count > 0)
                 {
                     sb.Append($"                return new {derivedFullTypeName}({string.Join(", ", args)}) {{ ");
@@ -1178,11 +1184,11 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 // No suitable constructor, return default
                 sb.AppendLine($"                return default;");
             }
-            
+
             sb.AppendLine("            }");
             isFirst = false;
         }
-        
+
         // For abstract types/interfaces, throw exception for unknown or missing discriminator
         // since we can't instantiate the base type
         sb.AppendLine("            else");
@@ -1201,16 +1207,16 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     /// when no derived type discriminator matches or when the discriminator indicates the base type.
     /// </summary>
     private static void GeneratePolymorphicReadWithBaseType(
-        StringBuilder sb, 
-        TypeToGenerate type, 
-        PolymorphicInfo polyInfo, 
+        StringBuilder sb,
+        TypeToGenerate type,
+        PolymorphicInfo polyInfo,
         IReadOnlyList<TypeToGenerate> allTypes,
         string fullTypeName)
     {
         // Collect all properties from all derived types
         var allProperties = new Dictionary<string, (string VarName, ITypeSymbol PropType, HashSet<string> YamlNames)>(StringComparer.OrdinalIgnoreCase);
         var discriminatorPropertyName = polyInfo.TypeDiscriminatorPropertyName;
-        
+
         // Get properties from the base type first
         foreach (var prop in GetAllProperties(type.Symbol).Where(p => p.GetMethod is not null && !ShouldIgnoreProperty(p)))
         {
@@ -1223,7 +1229,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             };
             allProperties[prop.Name] = (varName, prop.Type, yamlNames);
         }
-        
+
         // Collect properties from all derived types
         foreach (var (_, derivedTypeSymbol) in polyInfo.DerivedTypes)
         {
@@ -1250,10 +1256,10 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 }
             }
         }
-        
+
         // Declare the discriminator variable
         sb.AppendLine($"            string? _discriminator = null;");
-        
+
         // Declare variables for all properties with tracking flags for default preservation
         foreach (var kvp in allProperties)
         {
@@ -1278,7 +1284,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine("                var propertyName = reader.GetString();");
         sb.AppendLine("                reader.Read();");
         sb.AppendLine();
-        
+
         // Handle discriminator first
         sb.AppendLine($"                if (propertyName == \"{discriminatorPropertyName}\")");
         sb.AppendLine("                {");
@@ -1287,7 +1293,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine("                    continue;");
         sb.AppendLine("                }");
         sb.AppendLine();
-        
+
         sb.AppendLine("                switch (propertyName)");
         sb.AppendLine("                {");
 
@@ -1296,15 +1302,15 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             var propName = kvp.Key;
             var propInfo = kvp.Value;
-            
+
             foreach (var yamlName in propInfo.YamlNames.Distinct())
             {
                 sb.AppendLine($"                    case \"{yamlName}\":");
             }
-            
+
             GeneratePropertyRead(sb, propName, propInfo.PropType, allTypes);
             sb.AppendLine($"                        _has{propName} = true;");
-            
+
             sb.AppendLine("                        break;");
         }
 
@@ -1316,14 +1322,14 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendLine("            reader.Read(); // Move past MappingEnd");
         sb.AppendLine();
-        
+
         // Create defaults instances for derived types with parameterless constructors
         foreach (var (discriminator, derivedTypeSymbol) in polyInfo.DerivedTypes)
         {
             var constructors = derivedTypeSymbol.Constructors
                 .Where(c => c.DeclaredAccessibility == Accessibility.Public && !c.IsStatic)
                 .ToList();
-            
+
             var hasParameterlessConstructor = constructors.Any(c => c.Parameters.Length == 0);
             if (hasParameterlessConstructor)
             {
@@ -1332,7 +1338,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 sb.AppendLine($"            var _defaults{safeTypeName} = new {derivedFullTypeName}();");
             }
         }
-        
+
         // Also create a defaults instance for the base type if it has a parameterless constructor
         var baseHasParameterlessConstructor = type.Symbol.Constructors
             .Where(c => c.DeclaredAccessibility == Accessibility.Public && !c.IsStatic)
@@ -1343,7 +1349,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine($"            var _defaults{safeBaseTypeName} = new {fullTypeName}();");
         }
         sb.AppendLine();
-        
+
         // Generate if/else chain on discriminator to construct the correct concrete type
         // Using if/else with StringComparison.OrdinalIgnoreCase for case-insensitive matching
         var isFirst = true;
@@ -1351,32 +1357,32 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             var derivedFullTypeName = derivedTypeSymbol.ToDisplayString();
             var safeTypeName = derivedTypeSymbol.Name.Replace(".", "_");
-            
+
             // Get all settable properties for this derived type
             var derivedProperties = GetAllProperties(derivedTypeSymbol)
-                .Where(p => p.GetMethod is not null && p.SetMethod is not null 
+                .Where(p => p.GetMethod is not null && p.SetMethod is not null
                          && p.SetMethod.DeclaredAccessibility == Accessibility.Public
                          && !ShouldIgnoreProperty(p))
                 .ToList();
-            
+
             // Get constructor info for this derived type
             var constructors = derivedTypeSymbol.Constructors
                 .Where(c => c.DeclaredAccessibility == Accessibility.Public && !c.IsStatic)
                 .OrderByDescending(c => c.Parameters.Length)
                 .ToList();
-            
+
             var parameterlessConstructor = constructors.FirstOrDefault(c => c.Parameters.Length == 0);
             var primaryConstructor = parameterlessConstructor is null ? constructors.FirstOrDefault() : null;
-            
+
             var ifKeyword = isFirst ? "if" : "else if";
             sb.AppendLine($"            {ifKeyword} (string.Equals(_discriminator, \"{discriminator}\", System.StringComparison.OrdinalIgnoreCase))");
             sb.AppendLine("            {");
-            
+
             if (parameterlessConstructor is not null)
             {
                 // Use object initializer with conditional default fallback
                 sb.Append($"                return new {derivedFullTypeName} {{ ");
-                var propsToSet = derivedProperties.Select(p => 
+                var propsToSet = derivedProperties.Select(p =>
                     $"{p.Name} = _has{p.Name} ? _{p.Name.ToLowerInvariant()} : _defaults{safeTypeName}.{p.Name}");
                 sb.Append(string.Join(", ", propsToSet));
                 sb.AppendLine(" };");
@@ -1389,15 +1395,15 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                     {
                         var matchingProp = derivedProperties
                             .FirstOrDefault(p => p.Name.Equals(param.Name, StringComparison.OrdinalIgnoreCase));
-                        return matchingProp is not null 
-                            ? $"_{matchingProp.Name.ToLowerInvariant()}" 
+                        return matchingProp is not null
+                            ? $"_{matchingProp.Name.ToLowerInvariant()}"
                             : GetDefaultValue(param.Type);
                     });
-                
+
                 // Find additional properties not covered by constructor
                 var usedNames = new HashSet<string>(primaryConstructor.Parameters.Select(p => p.Name), StringComparer.OrdinalIgnoreCase);
                 var additionalProps = derivedProperties.Where(p => !usedNames.Contains(p.Name)).ToList();
-                
+
                 if (additionalProps.Count > 0)
                 {
                     sb.Append($"                return new {derivedFullTypeName}({string.Join(", ", args)}) {{ ");
@@ -1415,28 +1421,28 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 // No suitable constructor, return default
                 sb.AppendLine($"                return default;");
             }
-            
+
             sb.AppendLine("            }");
             isFirst = false;
         }
-        
+
         // For non-abstract base types, return an instance of the base type for unknown/missing discriminator
         // Get constructor info for the base type
         var baseConstructors = type.Symbol.Constructors
             .Where(c => c.DeclaredAccessibility == Accessibility.Public && !c.IsStatic)
             .OrderByDescending(c => c.Parameters.Length)
             .ToList();
-        
+
         var baseParamlessConstructor = baseConstructors.FirstOrDefault(c => c.Parameters.Length == 0);
         var basePrimaryConstructor = baseParamlessConstructor is null ? baseConstructors.FirstOrDefault() : null;
-        
+
         // Get settable properties for the base type
         var baseProperties = GetAllProperties(type.Symbol)
-            .Where(p => p.GetMethod is not null && p.SetMethod is not null 
+            .Where(p => p.GetMethod is not null && p.SetMethod is not null
                      && p.SetMethod.DeclaredAccessibility == Accessibility.Public
                      && !ShouldIgnoreProperty(p))
             .ToList();
-        
+
         var safeBaseTypeName2 = type.Symbol.Name.Replace(".", "_");
         sb.AppendLine("            else");
         sb.AppendLine("            {");
@@ -1444,7 +1450,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             // Use object initializer for base type with conditional default fallback
             sb.Append($"                return new {fullTypeName} {{ ");
-            var propsToSet = baseProperties.Select(p => 
+            var propsToSet = baseProperties.Select(p =>
                 $"{p.Name} = _has{p.Name} ? _{p.Name.ToLowerInvariant()} : _defaults{safeBaseTypeName2}.{p.Name}");
             sb.Append(string.Join(", ", propsToSet));
             sb.AppendLine(" };");
@@ -1457,15 +1463,15 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 {
                     var matchingProp = baseProperties
                         .FirstOrDefault(p => p.Name.Equals(param.Name, StringComparison.OrdinalIgnoreCase));
-                    return matchingProp is not null 
-                        ? $"_{matchingProp.Name.ToLowerInvariant()}" 
+                    return matchingProp is not null
+                        ? $"_{matchingProp.Name.ToLowerInvariant()}"
                         : GetDefaultValue(param.Type);
                 });
-            
+
             // Find additional properties not covered by constructor
             var usedNames = new HashSet<string>(basePrimaryConstructor.Parameters.Select(p => p.Name), StringComparer.OrdinalIgnoreCase);
             var additionalProps = baseProperties.Where(p => !usedNames.Contains(p.Name)).ToList();
-            
+
             if (additionalProps.Count > 0)
             {
                 sb.Append($"                return new {fullTypeName}({string.Join(", ", args)}) {{ ");
@@ -1489,9 +1495,9 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     /// Generates a Write method for polymorphic base types that dispatches to derived type converters.
     /// </summary>
     private static void GeneratePolymorphicWriteMethod(
-        StringBuilder sb, 
-        TypeToGenerate type, 
-        PolymorphicInfo polyInfo, 
+        StringBuilder sb,
+        TypeToGenerate type,
+        PolymorphicInfo polyInfo,
         IReadOnlyList<TypeToGenerate> allTypes,
         Compilation compilation)
     {
@@ -1509,20 +1515,20 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendLine("            // Dispatch to derived type converter based on runtime type");
         sb.AppendLine("            // (ordered from most specific to least specific to ensure correct type matching)");
-        
+
         // Sort derived types by inheritance depth (most specific first) to ensure correct pattern matching
         var sortedDerivedTypes = polyInfo.DerivedTypes
             .Select(dt => (dt.Discriminator, dt.DerivedType, Depth: GetInheritanceDepth(dt.DerivedType, type.Symbol)))
             .OrderByDescending(x => x.Depth)
             .ToList();
-        
+
         bool first = true;
         foreach (var (discriminator, derivedType, _) in sortedDerivedTypes)
         {
-            var derivedTypeInfo = allTypes.FirstOrDefault(t => 
+            var derivedTypeInfo = allTypes.FirstOrDefault(t =>
                 SymbolEqualityComparer.Default.Equals(t.Symbol, derivedType) ||
                 t.Symbol.ToDisplayString() == derivedType.ToDisplayString());
-            
+
             if (derivedTypeInfo is not null)
             {
                 var derivedTypeName = derivedTypeInfo.Symbol.Name;
@@ -1530,14 +1536,14 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 var derivedFullTypeName = derivedTypeInfo.Symbol.ToDisplayString();
                 var keyword = first ? "if" : "else if";
                 first = false;
-                
+
                 sb.AppendLine($"            {keyword} (value is {derivedFullTypeName} {derivedTypeName.ToLowerInvariant()}Value)");
                 sb.AppendLine("            {");
                 sb.AppendLine($"                new {derivedConverterName}().Write(writer, {derivedTypeName.ToLowerInvariant()}Value, options);");
                 sb.AppendLine("            }");
             }
         }
-        
+
         if (!first)
         {
             sb.AppendLine("            else");
@@ -1560,10 +1566,10 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine("            // No derived types registered - write as null");
             sb.AppendLine("            writer.WriteNull();");
         }
-        
+
         sb.AppendLine("        }");
     }
-    
+
     /// <summary>
     /// Generates inline property writes for the base type in polymorphic fallback.
     /// </summary>
@@ -1573,12 +1579,12 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         IReadOnlyList<TypeToGenerate> allTypes)
     {
         var typeName = type.Symbol.Name;
-        
+
         // Collect all public readable properties
         var allProperties = GetAllProperties(type.Symbol)
             .Where(p => p.GetMethod is not null && !ShouldIgnoreProperty(p))
             .ToList();
-            
+
         // Order properties with YamlPropertyOrder first
         var orderedProperties = allProperties
             .Select(p => (Property: p, Order: GetPropertyOrder(p)))
@@ -1586,16 +1592,16 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             .ThenBy(x => GetSerializedPropertyName(x.Property))
             .Select(x => x.Property)
             .ToList();
-        
+
         sb.AppendLine($"                // Base type {typeName} - write own properties");
         sb.AppendLine("                writer.WriteMappingStart();");
-        
+
         foreach (var prop in orderedProperties)
         {
             var propName = GetSerializedPropertyName(prop);
             GeneratePropertyWrite(sb, prop.Name, prop.Type, allTypes, "                ");
         }
-        
+
         sb.AppendLine("                writer.WriteMappingEnd();");
     }
 
@@ -1606,7 +1612,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
 
         sb.AppendLine($"        public override void Write(Utf8YamlWriter writer, {fullTypeName} value, YamlSerializerOptions options)");
         sb.AppendLine("        {");
-        
+
         // Special handling for enums - they are scalar values, not mappings
         if (type.Symbol.TypeKind == TypeKind.Enum)
         {
@@ -1614,21 +1620,21 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine("        }");
             return;
         }
-        
+
         // Special handling for collection types (List<T>, T[], etc.) at root level
         if (IsListOrArray(type.Symbol, out var elementType, out var isHashSet))
         {
             GenerateRootCollectionWrite(sb, type.Symbol, elementType!, allTypes);
             return;
         }
-        
+
         // Special handling for dictionary types at root level
         if (IsDictionary(type.Symbol, out var keyType, out var valueType))
         {
             GenerateRootDictionaryWrite(sb, type.Symbol, keyType!, valueType!, allTypes);
             return;
         }
-        
+
         sb.AppendLine("            writer.WriteMappingStart();");
         sb.AppendLine();
 
@@ -1638,7 +1644,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         string? discriminatorPropertyName = null;
         string? discriminatorValue = null;
         bool discriminatorHasMatchingProperty = false;
-        
+
         if (polyInfo is not null)
         {
             discriminatorValue = GetDiscriminatorForDerivedType(type.Symbol, polyInfo);
@@ -1652,7 +1658,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         var allProperties = GetAllProperties(type.Symbol)
             .Where(p => p.GetMethod is not null && !ShouldIgnoreProperty(p))
             .ToList();
-        
+
         // Check if there's a property that matches the discriminator name
         if (discriminatorPropertyName is not null)
         {
@@ -1662,15 +1668,15 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 return string.Equals(serializedName, discriminatorPropertyName, StringComparison.OrdinalIgnoreCase);
             });
         }
-        
+
         // Write discriminator at the beginning if:
         // 1. DiscriminatorPosition.First is configured, OR
         // 2. DiscriminatorPosition.PropertyOrder is configured but there's no matching property to attach the order to
         if (discriminatorPropertyName is not null && discriminatorValue is not null)
         {
-            var shouldWriteDiscriminatorFirst = discriminatorPosition == DiscriminatorPositionMode.First 
+            var shouldWriteDiscriminatorFirst = discriminatorPosition == DiscriminatorPositionMode.First
                 || (discriminatorPosition == DiscriminatorPositionMode.PropertyOrder && !discriminatorHasMatchingProperty);
-            
+
             if (shouldWriteDiscriminatorFirst)
             {
                 sb.AppendLine($"            writer.WritePropertyName(\"{discriminatorPropertyName}\");");
@@ -1678,7 +1684,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 sb.AppendLine();
             }
         }
-        
+
         // Find all discriminator property names (properties referenced by YamlSiblingDiscriminator)
         var discriminatorPropertyNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var prop in allProperties)
@@ -1689,10 +1695,10 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 discriminatorPropertyNames.Add(siblingInfo.DiscriminatorPropertyName);
             }
         }
-        
+
         // Order properties based on the configured ordering mode
         IEnumerable<IPropertySymbol> orderedProperties;
-        
+
         if (propertyOrdering == PropertyOrderingMode.Alphabetical)
         {
             // For alphabetical ordering, sort by the serialized name (kebab-case by default)
@@ -1711,7 +1717,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         }
         else
         {
-            // Declaration order: discriminators first (order -1000), then by YamlPropertyOrder, 
+            // Declaration order: discriminators first (order -1000), then by YamlPropertyOrder,
             // then by declaration order (index in the list) for stability and to match source order
             orderedProperties = allProperties
                 .Select((p, index) => (Property: p, Index: index))
@@ -1719,20 +1725,20 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 .ThenBy(x => GetPropertyOrder(x.Property) == int.MaxValue ? x.Index : 0) // Preserve declaration order for unordered properties
                 .Select(x => x.Property);
         }
-        
+
         foreach (var prop in orderedProperties)
         {
             var propName = prop.Name;
             var explicitName = GetExplicitYamlPropertyName(prop);
             var isNullable = IsNullableType(prop.Type);
-            
+
             // Calculate the serialized property name (for comparing with discriminator)
             var serializedName = explicitName ?? ToKebabCase(propName);
-            
+
             // Check if this property is the discriminator property
-            var isDiscriminatorProperty = discriminatorPropertyName is not null && 
+            var isDiscriminatorProperty = discriminatorPropertyName is not null &&
                 string.Equals(serializedName, discriminatorPropertyName, StringComparison.OrdinalIgnoreCase);
-            
+
             if (isDiscriminatorProperty)
             {
                 // When DiscriminatorPosition.First (or no matching property), discriminator was already written - skip
@@ -1750,7 +1756,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                     continue;
                 }
             }
-            
+
             // Check for YamlIgnore with conditional conditions (WhenWritingNull, WhenWritingDefault)
             var writeIgnoreCondition = GetWriteIgnoreCondition(prop);
             if (writeIgnoreCondition == IgnoreCondition.Always)
@@ -1758,7 +1764,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 // Already filtered out in the allProperties list, but double-check
                 continue;
             }
-            
+
             // Check for sibling discriminator
             // For dictionaries, we want sibling discriminator to apply to the dictionary values
             // For regular lists/arrays, sibling discriminator doesn't make sense (each element should determine its own type)
@@ -1767,7 +1773,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             {
                 siblingInfo = GetSiblingDiscriminatorInfo(prop);
             }
-            
+
             // Generate property name code
             string propertyNameCode;
             if (explicitName is not null)
@@ -1778,41 +1784,41 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             {
                 propertyNameCode = $"options.PropertyNamingPolicy?.ConvertName(\"{propName}\") ?? \"{ToKebabCase(propName)}\"";
             }
-            
+
             // Check if property type is a registered nested type (for IgnoreEmptyObjects support)
             var underlyingPropType = prop.Type;
             if (prop.Type is INamedTypeSymbol { IsGenericType: true, ConstructedFrom.SpecialType: SpecialType.System_Nullable_T } nullableType)
             {
                 underlyingPropType = nullableType.TypeArguments[0];
             }
-            var nestedTypeInfo = allTypes.FirstOrDefault(t => 
+            var nestedTypeInfo = allTypes.FirstOrDefault(t =>
                 SymbolEqualityComparer.Default.Equals(t.Symbol, underlyingPropType) ||
                 t.Symbol.ToDisplayString() == underlyingPropType.ToDisplayString());
-            
+
             // Check if the nested type is polymorphic (has derived types) or abstract
             // We can't use IsEmpty for polymorphic/abstract base types because we don't know the derived type's properties at compile time
             // UNLESS we have sibling discrimination info, which tells us all possible derived types
             var isPolymorphicBaseType = nestedTypeInfo is not null && GetPolymorphicInfoForType(nestedTypeInfo) is { DerivedTypes.Count: > 0 };
             var isAbstractType = nestedTypeInfo is not null && nestedTypeInfo.Symbol.IsAbstract;
             var hasSiblingDiscrimination = siblingInfo is not null && siblingInfo.Mappings.Count > 0;
-            
+
             // Skip IsEmpty for types with custom converters - the custom converter controls all serialization logic
             var hasCustomConverter = nestedTypeInfo?.CustomConverterType is not null;
-            
-            var isNestedObjectType = nestedTypeInfo is not null 
+
+            var isNestedObjectType = nestedTypeInfo is not null
                 && nestedTypeInfo.Symbol.TypeKind != TypeKind.Enum
-                && !IsListOrArray(nestedTypeInfo.Symbol, out _, out _) 
+                && !IsListOrArray(nestedTypeInfo.Symbol, out _, out _)
                 && !IsDictionary(nestedTypeInfo.Symbol, out _, out _)
                 && (!isPolymorphicBaseType || hasSiblingDiscrimination)  // Allow IsEmpty if we have sibling discrimination
                 && (!isAbstractType || hasSiblingDiscrimination)         // Allow IsEmpty if we have sibling discrimination
                 && !hasCustomConverter;                                  // Never use IsEmpty for types with custom converters
-            
+
             if (isNullable)
             {
                 // Build the condition for whether to write this property
                 var conditions = new List<string>();
                 conditions.Add($"value.{propName} is not null");
-                
+
                 if (ignoreEmptyObjects && isNestedObjectType)
                 {
                     if (hasSiblingDiscrimination)
@@ -1833,25 +1839,35 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                         conditions.Add($"!IsEmpty{safeName}(value.{propName})");
                     }
                 }
-                
+
                 // Handle YamlIgnore conditions:
                 // - WhenWritingNull: Skip if null (property-level, always respected)
                 // - WhenWritingDefault: Skip if null (for nullable types, null is the default)
-                if (writeIgnoreCondition == IgnoreCondition.WhenWritingNull || 
+                if (writeIgnoreCondition == IgnoreCondition.WhenWritingNull ||
                     writeIgnoreCondition == IgnoreCondition.WhenWritingDefault)
                 {
                     // Always skip if null, regardless of options.IgnoreNullValues
                     sb.AppendLine($"            if ({string.Join(" && ", conditions)})");
+                    sb.AppendLine("            {");
+                    sb.AppendLine($"                writer.WritePropertyName({propertyNameCode});");
+                    GeneratePropertyWrite(sb, propName, prop.Type, allTypes, "    ", siblingInfo);
+                    sb.AppendLine("            }");
+                }
+                else if (HasKeepNullValue(prop))
+                {
+                    // [KeepNullValue] forces unconditional write, bypassing options.IgnoreNullValues
+                    sb.AppendLine($"            writer.WritePropertyName({propertyNameCode});");
+                    GeneratePropertyWrite(sb, propName, prop.Type, allTypes, "", siblingInfo);
                 }
                 else
                 {
                     // Wrap nullable properties with IgnoreNullValues and IgnoreEmptyObjects checks
                     sb.AppendLine($"            if (!options.IgnoreNullValues || ({string.Join(" && ", conditions)}))");
+                    sb.AppendLine("            {");
+                    sb.AppendLine($"                writer.WritePropertyName({propertyNameCode});");
+                    GeneratePropertyWrite(sb, propName, prop.Type, allTypes, "    ", siblingInfo);
+                    sb.AppendLine("            }");
                 }
-                sb.AppendLine("            {");
-                sb.AppendLine($"                writer.WritePropertyName({propertyNameCode});");
-                GeneratePropertyWrite(sb, propName, prop.Type, allTypes, "    ", siblingInfo);
-                sb.AppendLine("            }");
             }
             else
             {
@@ -1888,23 +1904,23 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     {
         var fullTypeName = type.Symbol.ToDisplayString();
         var safeName = type.Symbol.Name.Replace(".", "_");
-        
+
         // Skip enums, collections, and primitives - they don't have properties
         if (type.Symbol.TypeKind == TypeKind.Enum)
         {
             return;
         }
-        
+
         if (IsListOrArray(type.Symbol, out _, out _) || IsDictionary(type.Symbol, out _, out _))
         {
             return;
         }
-        
+
         // Get all nullable properties that would be written
         var nullableProperties = GetAllProperties(type.Symbol)
             .Where(p => p.GetMethod is not null && !ShouldIgnoreProperty(p) && IsNullableType(p.Type))
             .ToList();
-        
+
         // If no nullable properties, the object is never considered "empty"
         if (nullableProperties.Count == 0)
         {
@@ -1912,19 +1928,19 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine();
             return;
         }
-        
+
         sb.AppendLine($"    private static bool IsEmpty{safeName}({fullTypeName}? obj)");
         sb.AppendLine("    {");
         sb.AppendLine("        if (obj is null) return true;");
-        
+
         // Generate the check: all nullable properties must be null
         var checks = nullableProperties.Select(p => $"obj.{p.Name} is null");
         sb.AppendLine($"        return {string.Join(" && ", checks)};");
-        
+
         sb.AppendLine("    }");
         sb.AppendLine();
     }
-    
+
     private static bool IsNullableType(ITypeSymbol type)
     {
         // Check for nullable value types
@@ -1932,13 +1948,13 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             return true;
         }
-        
+
         // Check for nullable reference types or reference types that can be null
         if (!type.IsValueType)
         {
             return true;
         }
-        
+
         return false;
     }
 
@@ -1946,7 +1962,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     {
         var typeStr = propType.ToDisplayString();
         var varName = $"_{propName.ToLowerInvariant()}";
-        
+
         // Handle sibling discriminator - use switch on discriminator value to determine concrete type
         // But for dictionaries, the sibling discriminator applies to the VALUE type, not the dictionary itself
         if (siblingInfo is not null && !IsDictionary(propType, out _, out _))
@@ -1954,7 +1970,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             var discriminatorVarName = $"_{siblingInfo.DiscriminatorPropertyName.ToLowerInvariant()}";
             sb.AppendLine($"                        switch ({discriminatorVarName}.ToString())");
             sb.AppendLine("                        {");
-            
+
             foreach (var (discValue, concreteType) in siblingInfo.Mappings)
             {
                 var concreteConverterName = GetConverterName(concreteType);
@@ -1962,7 +1978,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 sb.AppendLine($"                                {varName} = new {concreteConverterName}().Read(ref reader, options);");
                 sb.AppendLine("                                break;");
             }
-            
+
             sb.AppendLine("                            default:");
             sb.AppendLine("                                reader.Skip();");
             sb.AppendLine($"                                {varName} = null;");
@@ -1970,7 +1986,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine("                        }");
             return;
         }
-        
+
         // Handle nullable value types - get the underlying type
         var underlyingType = propType;
         var isNullableValueType = false;
@@ -1979,27 +1995,27 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             underlyingType = namedType.TypeArguments[0];
             isNullableValueType = true;
         }
-        
+
         var underlyingTypeStr = underlyingType.ToDisplayString();
-        
+
         // Check for collections first
         if (IsListOrArray(propType, out var elementType, out var isHashSet) && elementType is not null)
         {
             GenerateCollectionRead(sb, varName, propType, elementType, isHashSet, allTypes);
             return;
         }
-        
+
         if (IsDictionary(propType, out var keyType, out var valueType) && keyType is not null && valueType is not null)
         {
             GenerateDictionaryRead(sb, varName, keyType, valueType, allTypes, siblingInfo);
             return;
         }
-        
+
         // Check if the property type is a registered nested type
-        var nestedType = allTypes.FirstOrDefault(t => 
+        var nestedType = allTypes.FirstOrDefault(t =>
             SymbolEqualityComparer.Default.Equals(t.Symbol, underlyingType) ||
             t.Symbol.ToDisplayString() == underlyingType.ToDisplayString());
-        
+
         if (nestedType is not null)
         {
             // Check if the nested type has a custom converter - if so, use it with GeneratedRead wired up
@@ -2148,7 +2164,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         var typeStr = propType.ToDisplayString();
         var indent = $"            {extraIndent}";
         var indent2 = $"                {extraIndent}";
-        
+
         // Handle sibling discriminator - dispatch to concrete type converter based on runtime type
         // For dictionaries, sibling discriminator applies to the values, not the dictionary itself, so skip here
         if (siblingInfo is not null && siblingInfo.Mappings.Count > 0 && !IsDictionary(propType, out _, out _))
@@ -2157,7 +2173,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine($"{indent}{{");
             sb.AppendLine($"{indent2}writer.WriteNull();");
             sb.AppendLine($"{indent}}}");
-            
+
             bool first = true;
             foreach (var (discValue, concreteType) in siblingInfo.Mappings)
             {
@@ -2166,13 +2182,13 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 var varName = concreteType.Name.ToLowerInvariant() + "Value";
                 var keyword = first ? "else if" : "else if";
                 first = false;
-                
+
                 sb.AppendLine($"{indent}{keyword} (value.{propName} is {concreteTypeName} {varName})");
                 sb.AppendLine($"{indent}{{");
                 sb.AppendLine($"{indent2}new {concreteConverterName}().Write(writer, {varName}, options);");
                 sb.AppendLine($"{indent}}}");
             }
-            
+
             sb.AppendLine($"{indent}else");
             sb.AppendLine($"{indent}{{");
             sb.AppendLine($"{indent2}// Unknown derived type - write as null");
@@ -2180,7 +2196,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine($"{indent}}}");
             return;
         }
-        
+
         // Handle nullable value types - get the underlying type
         var underlyingType = propType;
         var isNullableValueType = false;
@@ -2189,27 +2205,27 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             underlyingType = namedType.TypeArguments[0];
             isNullableValueType = true;
         }
-        
+
         var underlyingTypeStr = underlyingType.ToDisplayString();
-        
+
         // Check for collections first
         if (IsListOrArray(propType, out var elementType, out _) && elementType is not null)
         {
             GenerateCollectionWrite(sb, propName, elementType, allTypes, extraIndent);
             return;
         }
-        
+
         if (IsDictionary(propType, out var keyType, out var valueType) && keyType is not null && valueType is not null)
         {
             GenerateDictionaryWrite(sb, propName, keyType, valueType, allTypes, extraIndent, siblingInfo);
             return;
         }
-        
+
         // Check if the property type is a registered nested type
-        var nestedType = allTypes.FirstOrDefault(t => 
+        var nestedType = allTypes.FirstOrDefault(t =>
             SymbolEqualityComparer.Default.Equals(t.Symbol, underlyingType) ||
             t.Symbol.ToDisplayString() == underlyingType.ToDisplayString());
-        
+
         if (nestedType is not null)
         {
             // Check if the nested type has a custom converter - if so, use it with GeneratedWrite wired up
@@ -2224,7 +2240,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             {
                 converterExpr = $"new {nestedConverterName}()";
             }
-            
+
             if (propType.IsValueType && !isNullableValueType)
             {
                 // Non-nullable value type - no null check needed
@@ -2470,21 +2486,21 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     private static string GetDefaultValue(ITypeSymbol type)
     {
         var typeStr = type.ToDisplayString();
-        
+
         // Handle arrays - use empty array instead of null
         if (type is IArrayTypeSymbol arrayType)
         {
             return $"System.Array.Empty<{arrayType.ElementType.ToDisplayString()}>()";
         }
-        
+
         // Handle generic collection types - use empty array/list instead of null
         if (type is INamedTypeSymbol namedType && namedType.IsGenericType)
         {
             var constructedFrom = namedType.ConstructedFrom.ToDisplayString();
-            var elementType = namedType.TypeArguments.Length > 0 
-                ? namedType.TypeArguments[0].ToDisplayString() 
+            var elementType = namedType.TypeArguments.Length > 0
+                ? namedType.TypeArguments[0].ToDisplayString()
                 : "object";
-                
+
             // List<T>, IList<T>, IReadOnlyList<T>, ICollection<T>, IEnumerable<T>
             if (constructedFrom.StartsWith("System.Collections.Generic.List<") ||
                 constructedFrom.StartsWith("System.Collections.Generic.IList<") ||
@@ -2494,19 +2510,19 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             {
                 return $"new System.Collections.Generic.List<{elementType}>()";
             }
-            
+
             // HashSet<T>
             if (constructedFrom.StartsWith("System.Collections.Generic.HashSet<"))
             {
                 return $"new System.Collections.Generic.HashSet<{elementType}>()";
             }
-            
+
             // Dictionary types
             if (namedType.TypeArguments.Length >= 2)
             {
                 var keyType = namedType.TypeArguments[0].ToDisplayString();
                 var valueType = namedType.TypeArguments[1].ToDisplayString();
-                
+
                 if (constructedFrom.StartsWith("System.Collections.Generic.Dictionary<") ||
                     constructedFrom.StartsWith("System.Collections.Generic.IDictionary<") ||
                     constructedFrom.StartsWith("System.Collections.Generic.IReadOnlyDictionary<"))
@@ -2515,12 +2531,12 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 }
             }
         }
-        
+
         if (type.NullableAnnotation == NullableAnnotation.Annotated || !type.IsValueType)
         {
             return "default!";
         }
-        
+
         return typeStr switch
         {
             "string" => "\"\"",
@@ -2544,12 +2560,12 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     private static string GetExplicitDefaultValueString(IParameterSymbol param)
     {
         var value = param.ExplicitDefaultValue;
-        
+
         if (value is null)
         {
             return "default!";
         }
-        
+
         return value switch
         {
             string s => $"\"{s.Replace("\"", "\\\"")}\"",
@@ -2572,7 +2588,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             return explicitName;
         }
-        
+
         // Default to kebab-case
         return ToKebabCase(property.Name);
     }
@@ -2682,6 +2698,18 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         return int.MaxValue;
     }
 
+    private static bool HasKeepNullValue(IPropertySymbol property)
+    {
+        foreach (var attr in property.GetAttributes())
+        {
+            if (attr.AttributeClass?.ToDisplayString() == KeepNullValueAttribute)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /// <summary>
     /// Gets the inheritance depth from a derived type to a base type.
     /// Higher values mean the type is more specific (further down the inheritance chain).
@@ -2690,7 +2718,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     {
         int depth = 0;
         var current = derivedType;
-        
+
         while (current is not null)
         {
             if (SymbolEqualityComparer.Default.Equals(current, baseType))
@@ -2700,7 +2728,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             current = current.BaseType;
             depth++;
         }
-        
+
         // If not found in class hierarchy, check interfaces
         if (baseType.TypeKind == TypeKind.Interface)
         {
@@ -2716,7 +2744,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 depth++;
             }
         }
-        
+
         return depth;
     }
 
@@ -2783,13 +2811,13 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         foreach (var attr in typeSymbol.GetAttributes())
         {
             var attrName = attr.AttributeClass?.Name;
-            
+
             // Check for [YamlPolymorphic] attribute
             if (attrName == "YamlPolymorphicAttribute")
             {
                 // Default discriminator is "$type"
                 typeDiscriminatorPropertyName = "$type";
-                
+
                 // Check for custom TypeDiscriminatorPropertyName
                 foreach (var namedArg in attr.NamedArguments)
                 {
@@ -2799,7 +2827,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                     }
                 }
             }
-            
+
             // Check for [YamlDerivedType] attributes
             if (attrName == "YamlDerivedTypeAttribute")
             {
@@ -2808,12 +2836,12 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 {
                     // Get discriminator value (second constructor arg or derived type name)
                     string discriminator = derivedType.Name;
-                    if (attr.ConstructorArguments.Length >= 2 && 
+                    if (attr.ConstructorArguments.Length >= 2 &&
                         attr.ConstructorArguments[1].Value is string discValue)
                     {
                         discriminator = discValue;
                     }
-                    
+
                     derivedTypes.Add((discriminator, derivedType));
                 }
             }
@@ -2839,7 +2867,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             return type.PolymorphicConfig;
         }
-        
+
         // Fall back to type-level attributes
         return GetPolymorphicInfo(type.Symbol);
     }
@@ -2851,7 +2879,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     {
         return GetPolymorphicInfoWithInheritance(typeSymbol, null);
     }
-    
+
     /// <summary>
     /// Gets polymorphic info for a type, checking:
     /// 1. The type itself (from attributes)
@@ -2888,7 +2916,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 return info;
             }
         }
-        
+
         // Check context-based polymorphic configurations
         // Look for any TypeToGenerate in allTypes that has a PolymorphicConfig where this type is listed as a derived type
         if (allTypes is not null)
@@ -2899,7 +2927,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 {
                     continue;
                 }
-                
+
                 // Check if this typeSymbol is listed as a derived type in the PolymorphicConfig
                 foreach (var (_, derivedType) in contextType.PolymorphicConfig.DerivedTypes)
                 {
@@ -2925,17 +2953,17 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         foreach (var attr in property.GetAttributes())
         {
             var attrName = attr.AttributeClass?.Name;
-            
+
             // Check for [YamlSiblingDiscriminator] attribute
             if (attrName == "YamlSiblingDiscriminatorAttribute")
             {
-                if (attr.ConstructorArguments.Length > 0 && 
+                if (attr.ConstructorArguments.Length > 0 &&
                     attr.ConstructorArguments[0].Value is string propName)
                 {
                     discriminatorPropertyName = propName;
                 }
             }
-            
+
             // Check for [YamlDiscriminatorMapping] attributes
             if (attrName == "YamlDiscriminatorMappingAttribute")
             {
@@ -2950,7 +2978,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                         ITypeSymbol ts when ts is INamedTypeSymbol nts2 => nts2,
                         _ => null
                     };
-                    
+
                     if (concreteType is not null)
                     {
                         mappings.Add((discValue, concreteType));
@@ -2987,14 +3015,14 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     {
         elementType = null;
         isHashSet = false;
-        
+
         // Check for arrays
         if (type is IArrayTypeSymbol arrayType)
         {
             elementType = arrayType.ElementType;
             return true;
         }
-        
+
         // Check for List<T>, IList<T>, IReadOnlyList<T>, IEnumerable<T>, ICollection<T>, HashSet<T>
         if (type is INamedTypeSymbol namedType && namedType.IsGenericType)
         {
@@ -3015,15 +3043,15 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     private static bool IsDictionary(ITypeSymbol type, [NotNullWhen(true)] out ITypeSymbol? keyType, [NotNullWhen(true)] out ITypeSymbol? valueType)
     {
         keyType = null;
         valueType = null;
-        
+
         if (type is INamedTypeSymbol namedType && namedType.IsGenericType)
         {
             var typeName = namedType.ConstructedFrom.ToDisplayString();
@@ -3036,10 +3064,10 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     /// <summary>
     /// Generates read method for a collection type (List&lt;T&gt;, T[], etc.) when it's the root type.
     /// </summary>
@@ -3048,7 +3076,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         var elementTypeStr = elementType.ToDisplayString();
         var isArray = collectionType is IArrayTypeSymbol;
         var fullTypeName = collectionType.ToDisplayString();
-        
+
         sb.AppendLine("            if (reader.TokenType != YamlTokenType.SequenceStart)");
         sb.AppendLine("            {");
         sb.AppendLine("                // Skip unexpected token to prevent infinite loops when reading collections");
@@ -3060,14 +3088,14 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine("            reader.Read(); // Move past SequenceStart");
         sb.AppendLine("            while (reader.TokenType != YamlTokenType.SequenceEnd && reader.TokenType != YamlTokenType.None)");
         sb.AppendLine("            {");
-        
+
         // Generate element reading based on element type
         GenerateElementRead(sb, "item", elementType, allTypes, "                ");
         sb.AppendLine("                list.Add(item);");
-        
+
         sb.AppendLine("            }");
         sb.AppendLine("            reader.Read(); // Move past SequenceEnd");
-        
+
         if (isArray)
         {
             sb.AppendLine("            return list.ToArray();");
@@ -3080,10 +3108,10 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             sb.AppendLine("            return list;");
         }
-        
+
         sb.AppendLine("        }");
     }
-    
+
     /// <summary>
     /// Generates read method for a dictionary type when it's the root type.
     /// </summary>
@@ -3091,7 +3119,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     {
         var keyTypeStr = keyType.ToDisplayString();
         var valueTypeStr = valueType.ToDisplayString();
-        
+
         sb.AppendLine("            if (reader.TokenType != YamlTokenType.MappingStart)");
         sb.AppendLine("            {");
         sb.AppendLine("                // Skip unexpected token to prevent infinite loops when reading collections");
@@ -3103,7 +3131,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine("            reader.Read(); // Move past MappingStart");
         sb.AppendLine("            while (reader.TokenType != YamlTokenType.MappingEnd && reader.TokenType != YamlTokenType.None)");
         sb.AppendLine("            {");
-        
+
         // Read key
         if (keyType.TypeKind == TypeKind.Enum)
         {
@@ -3120,17 +3148,17 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine("                var key = reader.GetString() ?? string.Empty;");
             sb.AppendLine("                reader.Read();");
         }
-        
+
         // Read value
         GenerateElementRead(sb, "value", valueType, allTypes, "                ");
-        
+
         sb.AppendLine("                dict[key] = value;");
         sb.AppendLine("            }");
         sb.AppendLine("            reader.Read(); // Move past MappingEnd");
         sb.AppendLine("            return dict;");
         sb.AppendLine("        }");
     }
-    
+
     /// <summary>
     /// Generates write method for a collection type (List&lt;T&gt;, T[], etc.) when it's the root type.
     /// </summary>
@@ -3172,15 +3200,15 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine("                writer.WriteSequenceStart();");
         sb.AppendLine("                foreach (var item in value)");
         sb.AppendLine("                {");
-        
+
         GenerateElementWrite(sb, "item", elementType, allTypes, "                    ");
-        
+
         sb.AppendLine("                }");
         sb.AppendLine("                writer.WriteSequenceEnd();");
         sb.AppendLine("            }");
         sb.AppendLine("        }");
     }
-    
+
     /// <summary>
     /// Generates write method for a dictionary type when it's the root type.
     /// </summary>
@@ -3189,7 +3217,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine("            writer.WriteMappingStart();");
         sb.AppendLine("            foreach (var kvp in value)");
         sb.AppendLine("            {");
-        
+
         // Write key
         if (keyType.TypeKind == TypeKind.Enum)
         {
@@ -3199,34 +3227,34 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             sb.AppendLine("                writer.WritePropertyName(kvp.Key);");
         }
-        
+
         // Write value
         GenerateElementWrite(sb, "kvp.Value", valueType, allTypes, "                ");
-        
+
         sb.AppendLine("            }");
         sb.AppendLine("            writer.WriteMappingEnd();");
         sb.AppendLine("        }");
     }
-    
+
     private static void GenerateCollectionRead(StringBuilder sb, string varName, ITypeSymbol propType, ITypeSymbol elementType, bool isHashSet, IReadOnlyList<TypeToGenerate> allTypes)
     {
         var elementTypeStr = elementType.ToDisplayString();
         var isArray = propType is IArrayTypeSymbol;
-        
+
         sb.AppendLine($"                        if (reader.TokenType == YamlTokenType.SequenceStart)");
         sb.AppendLine("                        {");
         sb.AppendLine($"                            var list = new System.Collections.Generic.List<{elementTypeStr}>();");
         sb.AppendLine("                            reader.Read(); // Move past SequenceStart");
         sb.AppendLine("                            while (reader.TokenType != YamlTokenType.SequenceEnd && reader.TokenType != YamlTokenType.None)");
         sb.AppendLine("                            {");
-        
+
         // Generate element reading based on element type
         GenerateElementRead(sb, "item", elementType, allTypes, "                                ");
         sb.AppendLine("                                list.Add(item);");
-        
+
         sb.AppendLine("                            }");
         sb.AppendLine("                            reader.Read(); // Move past SequenceEnd");
-        
+
         if (isArray)
         {
             sb.AppendLine($"                            {varName} = list.ToArray();");
@@ -3239,18 +3267,18 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             sb.AppendLine($"                            {varName} = list;");
         }
-        
+
         sb.AppendLine("                        }");
         sb.AppendLine("                        else");
         sb.AppendLine("                        {");
         sb.AppendLine("                            reader.Skip();");
         sb.AppendLine("                        }");
     }
-    
+
     private static void GenerateElementRead(StringBuilder sb, string varName, ITypeSymbol elementType, IReadOnlyList<TypeToGenerate> allTypes, string indent)
     {
         var typeStr = elementType.ToDisplayString();
-        
+
         // Check if element type is itself a collection (nested collections)
         if (IsListOrArray(elementType, out var nestedElementType, out var isNestedHashSet))
         {
@@ -3274,7 +3302,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine($"{indent}}}");
             return;
         }
-        
+
         // Check if element type is a dictionary
         if (IsDictionary(elementType, out var nestedKeyType, out var nestedValueType))
         {
@@ -3301,12 +3329,12 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine($"{indent}}}");
             return;
         }
-        
+
         // Check if it's a registered nested type
-        var nestedType = allTypes.FirstOrDefault(t => 
+        var nestedType = allTypes.FirstOrDefault(t =>
             SymbolEqualityComparer.Default.Equals(t.Symbol, elementType) ||
             t.Symbol.ToDisplayString() == typeStr);
-        
+
         if (nestedType is not null)
         {
             // Check if the nested type has a custom converter - if so, use it with GeneratedRead wired up
@@ -3360,12 +3388,12 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine($"{indent}reader.Skip();");
         }
     }
-    
+
     private static void GenerateDictionaryRead(StringBuilder sb, string varName, ITypeSymbol keyType, ITypeSymbol valueType, IReadOnlyList<TypeToGenerate> allTypes, SiblingDiscriminatorInfo? siblingInfo = null)
     {
         var keyTypeStr = keyType.ToDisplayString();
         var valueTypeStr = valueType.ToDisplayString();
-        
+
         sb.AppendLine($"                        if (reader.TokenType == YamlTokenType.MappingStart)");
         sb.AppendLine("                        {");
         sb.AppendLine($"                            var dict = new System.Collections.Generic.Dictionary<{keyTypeStr}, {valueTypeStr}>();");
@@ -3373,7 +3401,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine("                            while (reader.TokenType != YamlTokenType.MappingEnd && reader.TokenType != YamlTokenType.None)");
         sb.AppendLine("                            {");
         sb.AppendLine("                                var keyStr = reader.GetString() ?? \"\";");
-        
+
         // Handle enum keys
         if (keyType.TypeKind == TypeKind.Enum)
         {
@@ -3388,9 +3416,9 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             // Default to string for unknown key types
             sb.AppendLine($"                                var key = keyStr;");
         }
-        
+
         sb.AppendLine("                                reader.Read();");
-        
+
         // Generate value reading - use sibling discriminator if provided for polymorphic value types
         if (siblingInfo is not null)
         {
@@ -3399,7 +3427,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine($"                                {valueTypeStr} value;");
             sb.AppendLine($"                                switch ({discriminatorVarName}.ToString())");
             sb.AppendLine("                                {");
-            
+
             foreach (var (discValue, concreteType) in siblingInfo.Mappings)
             {
                 var concreteConverterName = GetConverterName(concreteType);
@@ -3407,7 +3435,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 sb.AppendLine($"                                        value = new {concreteConverterName}().Read(ref reader, options);");
                 sb.AppendLine("                                        break;");
             }
-            
+
             sb.AppendLine("                                    default:");
             sb.AppendLine("                                        reader.Skip();");
             sb.AppendLine("                                        value = null;");
@@ -3418,7 +3446,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             GenerateElementRead(sb, "value", valueType, allTypes, "                                ");
         }
-        
+
         // Handle array value types - GenerateElementRead creates List<T> for collections
         if (valueType is IArrayTypeSymbol arrayType)
         {
@@ -3428,7 +3456,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             sb.AppendLine("                                dict[key] = value;");
         }
-        
+
         sb.AppendLine("                            }");
         sb.AppendLine("                            reader.Read(); // Move past MappingEnd");
         sb.AppendLine($"                            {varName} = dict;");
@@ -3438,11 +3466,11 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine("                            reader.Skip();");
         sb.AppendLine("                        }");
     }
-    
+
     private static void GenerateCollectionWrite(StringBuilder sb, string propName, ITypeSymbol elementType, IReadOnlyList<TypeToGenerate> allTypes, string extraIndent = "")
     {
         var elementTypeStr = elementType.ToDisplayString();
-        
+
         sb.AppendLine($"            if (value.{propName} is not null)");
         sb.AppendLine("            {");
         // Use flow style for empty collections to output [] instead of nothing
@@ -3456,10 +3484,10 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine("                    writer.WriteSequenceStart();");
         sb.AppendLine($"                    foreach (var item in value.{propName})");
         sb.AppendLine("                    {");
-        
+
         // Generate element writing based on element type
         GenerateElementWrite(sb, "item", elementType, allTypes, "                        ");
-        
+
         sb.AppendLine("                    }");
         sb.AppendLine("                    writer.WriteSequenceEnd();");
         sb.AppendLine("                }");
@@ -3469,11 +3497,11 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine("                writer.WriteNull();");
         sb.AppendLine("            }");
     }
-    
+
     private static void GenerateElementWrite(StringBuilder sb, string varName, ITypeSymbol elementType, IReadOnlyList<TypeToGenerate> allTypes, string indent, SiblingDiscriminatorInfo? siblingInfo = null)
     {
         var typeStr = elementType.ToDisplayString();
-        
+
         // Handle sibling discriminator - dispatch to concrete type converter based on runtime type
         if (siblingInfo is not null && siblingInfo.Mappings.Count > 0)
         {
@@ -3481,7 +3509,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine($"{indent}{{");
             sb.AppendLine($"{indent}    writer.WriteNull();");
             sb.AppendLine($"{indent}}}");
-            
+
             bool first = true;
             foreach (var (discValue, concreteType) in siblingInfo.Mappings)
             {
@@ -3490,13 +3518,13 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 var localVarName = concreteType.Name.ToLowerInvariant() + "Value";
                 var keyword = first ? "else if" : "else if";
                 first = false;
-                
+
                 sb.AppendLine($"{indent}{keyword} ({varName} is {concreteTypeName} {localVarName})");
                 sb.AppendLine($"{indent}{{");
                 sb.AppendLine($"{indent}    new {concreteConverterName}().Write(writer, {localVarName}, options);");
                 sb.AppendLine($"{indent}}}");
             }
-            
+
             sb.AppendLine($"{indent}else");
             sb.AppendLine($"{indent}{{");
             sb.AppendLine($"{indent}    // Unknown derived type - write as null");
@@ -3504,7 +3532,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine($"{indent}}}");
             return;
         }
-        
+
         // Check if element type is itself a collection (nested collections)
         if (IsListOrArray(elementType, out var nestedElementType, out _))
         {
@@ -3523,7 +3551,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine($"{indent}}}");
             return;
         }
-        
+
         // Check if element type is a dictionary
         if (IsDictionary(elementType, out var nestedKeyType, out var nestedValueType))
         {
@@ -3543,12 +3571,12 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine($"{indent}}}");
             return;
         }
-        
+
         // Check if it's a registered nested type
-        var nestedType = allTypes.FirstOrDefault(t => 
+        var nestedType = allTypes.FirstOrDefault(t =>
             SymbolEqualityComparer.Default.Equals(t.Symbol, elementType) ||
             t.Symbol.ToDisplayString() == typeStr);
-        
+
         if (nestedType is not null)
         {
             // Check if the nested type has a custom converter - if so, use it with GeneratedWrite wired up
@@ -3563,7 +3591,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             {
                 converterExpr = $"new {nestedConverterName}()";
             }
-            
+
             // Value types (enums, structs) can't be null
             if (elementType.IsValueType)
             {
@@ -3606,7 +3634,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             sb.AppendLine($"{indent}writer.WriteString({varName}?.ToString());");
         }
     }
-    
+
     private static void GenerateDictionaryWrite(StringBuilder sb, string propName, ITypeSymbol keyType, ITypeSymbol valueType, IReadOnlyList<TypeToGenerate> allTypes, string extraIndent = "", SiblingDiscriminatorInfo? siblingInfo = null)
     {
         sb.AppendLine($"            if (value.{propName} is not null)");
@@ -3614,7 +3642,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine("                writer.WriteMappingStart();");
         sb.AppendLine($"                foreach (var kvp in value.{propName})");
         sb.AppendLine("                {");
-        
+
         // Handle enum keys and value type keys (can't use ?. on value types)
         if (keyType.IsValueType)
         {
@@ -3624,10 +3652,10 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         {
             sb.AppendLine("                    writer.WritePropertyName(kvp.Key?.ToString() ?? \"\");");
         }
-        
+
         // Generate value writing - pass siblingInfo for polymorphic dictionary values
         GenerateElementWrite(sb, "kvp.Value", valueType, allTypes, "                    ", siblingInfo);
-        
+
         sb.AppendLine("                }");
         sb.AppendLine("                writer.WriteMappingEnd();");
         sb.AppendLine("            }");
@@ -3636,7 +3664,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         sb.AppendLine("                writer.WriteNull();");
         sb.AppendLine("            }");
     }
-    
+
     /// <summary>
     /// Gets all public instance properties including inherited ones.
     /// Properties are returned in declaration order: base class properties first, then derived class.
@@ -3647,28 +3675,28 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         // First, collect the type hierarchy (from base to derived)
         var typeHierarchy = new List<INamedTypeSymbol>();
         var currentType = type;
-        
+
         while (currentType != null && currentType.SpecialType != SpecialType.System_Object)
         {
             typeHierarchy.Add(currentType);
             currentType = currentType.BaseType;
         }
-        
+
         // Reverse to process from base class to derived class
         typeHierarchy.Reverse();
-        
+
         // Track which properties have been seen to handle overrides
         // For overrides, we use the derived class's property symbol but keep base class position
         var seenProperties = new Dictionary<string, IPropertySymbol>();
         var propertyOrder = new List<string>();
-        
+
         foreach (var typeInHierarchy in typeHierarchy)
         {
             foreach (var member in typeInHierarchy.GetMembers())
             {
-                if (member is IPropertySymbol prop 
+                if (member is IPropertySymbol prop
                     && prop.DeclaredAccessibility == Accessibility.Public
-                    && !prop.IsStatic 
+                    && !prop.IsStatic
                     && !prop.IsIndexer)
                 {
                     if (seenProperties.ContainsKey(prop.Name))
@@ -3685,14 +3713,14 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 }
             }
         }
-        
+
         // Return properties in declaration order (base class first)
         foreach (var propName in propertyOrder)
         {
             yield return seenProperties[propName];
         }
     }
-    
+
     /// <summary>
     /// Gets a unique identifier name for a type to avoid collisions
     /// when multiple types have the same simple name in different namespaces.
@@ -3704,7 +3732,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         var fullName = type.ToDisplayString();
         return fullName.Replace(".", "_").Replace("<", "_").Replace(">", "_").Replace(", ", "_");
     }
-    
+
     /// <summary>
     /// Gets a unique converter name for a type.
     /// </summary>
@@ -3712,7 +3740,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     {
         return $"{GetUniqueTypeName(type)}Converter";
     }
-    
+
     /// <summary>
     /// Gets a unique converter name from the full type display string.
     /// </summary>
@@ -3721,7 +3749,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         var sanitizedName = fullTypeName.Replace(".", "_").Replace("<", "_").Replace(">", "_").Replace(", ", "_");
         return $"{sanitizedName}Converter";
     }
-    
+
     /// <summary>
     /// Builds a map from full type names to property names.
     /// Uses simple names when there's no collision, and qualified names when there are collisions.
@@ -3729,12 +3757,12 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     private static Dictionary<string, string> BuildPropertyNameMap(List<TypeToGenerate> types)
     {
         var result = new Dictionary<string, string>();
-        
+
         // Group types by simple name to detect collisions
         var groupedBySimpleName = types
             .GroupBy(t => GetSimplePropertyName(t.Symbol))
             .ToList();
-        
+
         foreach (var group in groupedBySimpleName)
         {
             var typesList = group.ToList();
@@ -3754,10 +3782,10 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 }
             }
         }
-        
+
         return result;
     }
-    
+
     /// <summary>
     /// Gets a simple property name for a type. For generic types, includes the type arguments.
     /// E.g., List&lt;TemplateTransformDefinition&gt; becomes ListTemplateTransformDefinition
@@ -3771,7 +3799,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             var elementName = GetSimplePropertyName(arrayType.ElementType);
             return elementName + "Array";
         }
-        
+
         if (type is INamedTypeSymbol namedType && namedType.IsGenericType)
         {
             // For generic types, combine the base name with type arguments
@@ -3780,7 +3808,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             var typeArgs = string.Join("", namedType.TypeArguments.Select(GetSimplePropertyName));
             return baseName + typeArgs;
         }
-        
+
         return type.Name;
     }
 }
@@ -3797,9 +3825,9 @@ internal sealed class ContextToGenerate : IEquatable<ContextToGenerate>
     public DiscriminatorPositionMode DiscriminatorPosition { get; }
 
     public ContextToGenerate(
-        string className, 
-        string ns, 
-        List<TypeToGenerate> types, 
+        string className,
+        string ns,
+        List<TypeToGenerate> types,
         PropertyOrderingMode propertyOrdering = PropertyOrderingMode.DeclarationOrder,
         bool indentSequenceItems = true,
         bool ignoreNullValues = false,
@@ -3826,7 +3854,7 @@ internal sealed class ContextToGenerate : IEquatable<ContextToGenerate>
     }
 
     public override bool Equals(object? obj) => Equals(obj as ContextToGenerate);
-    
+
     public override int GetHashCode() => (ClassName, Namespace).GetHashCode();
 }
 
@@ -3870,7 +3898,7 @@ internal enum DiscriminatorPositionMode
 internal sealed class TypeToGenerate
 {
     public INamedTypeSymbol Symbol { get; }
-    
+
     /// <summary>
     /// Per-type property ordering override. Null means inherit from context.
     /// </summary>
@@ -3890,8 +3918,8 @@ internal sealed class TypeToGenerate
     public INamedTypeSymbol? CustomConverterType { get; }
 
     public TypeToGenerate(
-        INamedTypeSymbol symbol, 
-        PropertyOrderingMode? propertyOrdering = null, 
+        INamedTypeSymbol symbol,
+        PropertyOrderingMode? propertyOrdering = null,
         PolymorphicInfo? polymorphicConfig = null,
         INamedTypeSymbol? customConverterType = null)
     {
@@ -3911,7 +3939,7 @@ internal sealed class PolymorphicInfo
     /// The property name used as type discriminator (e.g., "$type" or "kind").
     /// </summary>
     public string TypeDiscriminatorPropertyName { get; }
-    
+
     /// <summary>
     /// Mappings from discriminator value to derived type symbol.
     /// </summary>
@@ -3933,7 +3961,7 @@ internal sealed class SiblingDiscriminatorInfo
     /// The name of the sibling property that contains the discriminator value.
     /// </summary>
     public string DiscriminatorPropertyName { get; }
-    
+
     /// <summary>
     /// Mappings from discriminator value to concrete type symbol.
     /// </summary>
