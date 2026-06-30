@@ -25,6 +25,7 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
     private const string YamlSerializableAttributeGeneric = "Yamlify.Serialization.YamlSerializableAttribute<T>";
     private const string YamlDerivedTypeMappingAttributeGeneric = "Yamlify.Serialization.YamlDerivedTypeMappingAttribute<TBase, TDerived>";
     private const string YamlSerializerContextBase = "Yamlify.Serialization.YamlSerializerContext";
+    private const string KeepNullValueAttribute = "Yamlify.Serialization.KeepNullValueAttribute";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -826,7 +827,12 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
             if (canPreserveDefaults && settableProperties.Contains(prop))
             {
                 var varName = $"_{propName.ToLowerInvariant()}";
-                if (prop.Type.IsValueType)
+                if (HasKeepNullValue(prop))
+                {
+                    // [KeepNullValue] forces explicit nulls from YAML to be honored
+                    sb.AppendLine($"                        _has{propName} = true;");
+                }
+                else if (prop.Type.IsValueType)
                 {
                     // Value types are always "set"
                     sb.AppendLine($"                        _has{propName} = true;");
@@ -1842,16 +1848,26 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
                 {
                     // Always skip if null, regardless of options.IgnoreNullValues
                     sb.AppendLine($"            if ({string.Join(" && ", conditions)})");
+                    sb.AppendLine("            {");
+                    sb.AppendLine($"                writer.WritePropertyName({propertyNameCode});");
+                    GeneratePropertyWrite(sb, propName, prop.Type, allTypes, "    ", siblingInfo);
+                    sb.AppendLine("            }");
+                }
+                else if (HasKeepNullValue(prop))
+                {
+                    // [KeepNullValue] forces unconditional write, bypassing options.IgnoreNullValues
+                    sb.AppendLine($"            writer.WritePropertyName({propertyNameCode});");
+                    GeneratePropertyWrite(sb, propName, prop.Type, allTypes, "", siblingInfo);
                 }
                 else
                 {
                     // Wrap nullable properties with IgnoreNullValues and IgnoreEmptyObjects checks
                     sb.AppendLine($"            if (!options.IgnoreNullValues || ({string.Join(" && ", conditions)}))");
+                    sb.AppendLine("            {");
+                    sb.AppendLine($"                writer.WritePropertyName({propertyNameCode});");
+                    GeneratePropertyWrite(sb, propName, prop.Type, allTypes, "    ", siblingInfo);
+                    sb.AppendLine("            }");
                 }
-                sb.AppendLine("            {");
-                sb.AppendLine($"                writer.WritePropertyName({propertyNameCode});");
-                GeneratePropertyWrite(sb, propName, prop.Type, allTypes, "    ", siblingInfo);
-                sb.AppendLine("            }");
             }
             else
             {
@@ -2680,6 +2696,18 @@ public sealed class YamlSourceGenerator : IIncrementalGenerator
         }
         // Default order is 0, properties without attribute come after those with order
         return int.MaxValue;
+    }
+
+    private static bool HasKeepNullValue(IPropertySymbol property)
+    {
+        foreach (var attr in property.GetAttributes())
+        {
+            if (attr.AttributeClass?.ToDisplayString() == KeepNullValueAttribute)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     /// <summary>
